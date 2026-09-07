@@ -1,0 +1,456 @@
+/* layout-v3.js - MSP Launchpad blog reading layout helpers, third round (pairs with layout-v3.css). Runs AFTER
+   tokens.js and faq-accordion.js. Derives everything from the article itself - no new copy, no fields, the words of
+   every paragraph stay exactly as written; the script only splits, wraps and classes them:
+     1. paragraphs over SPLIT_WORDS words are split into two at the sentence boundary nearest the middle
+     2. reading time appended to the .mspl-post-meta line (words / 220)
+     3. figures classified: alt "Checklist: | Steps: | Key figures:" = .mspl-infographic, anything else = .mspl-photo
+     4. per body section: the first paragraph becomes the lede (.mspl-lede); runs of H3 + one short paragraph, and
+        lists of LIST_MIN+ items, become a structured block (.mspl-ig: the SAME markup drawn as infographic cards or
+        as a table - round 6, see the knob below); the last paragraph of every run of RUN_MIN+ paragraphs becomes a
+        callout (.mspl-callout, never in the intro or the CTA section); the first sentence carrying a percentage or a
+        currency figure is highlighted (.mspl-hl), one per section
+     5. "On this page" chip strip from the article's own H2s, inserted before the first H2 (needs TOC_MIN entries)
+     6. CTA anchors whose site button classes gave them no background get .mspl-btn (the sandbox's token classes are
+        c-button-main-1 / c-button-wrap-1 while the pipeline writes c-button-main / c-button-wrap, so the button
+        never renders there; a site whose classes match keeps its own button)
+     7. the Sources section wrapped and collapsed behind its own H2 (the H2 stays an H2; the button sits inside it)
+   Plain ES5, idempotent (data-mspl-layout guard), no dependencies - pastes into a Webflow embed as-is.
+   Knob (optional, one line BEFORE this script):
+     window.MSPL_LAYOUT = { structured: 'table' | 'cards' | { points: 'table' | 'cards', list: 'cards' | 'table' },
+                            kicker: false, footer: true | false,
+                            brand: { name: 'Client name', site: 'client.com', url: 'https://client.com' } }
+   Default device per kind (round 6e): an H3 ladder is a TABLE (Thanh: "less wordy, easier to absorb"), a bullet list
+   is on the cards device (tiles / rail); 'table' or 'cards' flips every block, the object form sets each kind.
+   Nothing here adds a word to the ARTICLE: numbers, check marks and the optional kicker are CSS decoration. The one
+   line the script adds is the brand footer under a TABLE block (round 6c, Thanh: the name, the website name and the URL,
+   smaller, at the bottom of the table; 6d: not on the on-page blocks, which sit mid-content and read as lists) - from
+   the knob, else og:site_name + the page's own host; footer: true forces it everywhere, footer: false drops it. */
+(function () {
+  'use strict';
+  var SPLIT_WORDS = 60;          // a paragraph longer than this is split ...
+  var SPLIT_MIN_HALF = 20;       // ... only where both halves keep at least this many words
+  var LEDE_MAX_WORDS = 70;       // the first paragraph of a section is set as the lede up to this length
+  var RUN_MIN = 3;               // a run of this many consecutive paragraphs gets its last one lifted into a callout
+  var CARDS_MIN = 3;             // H3 + paragraph pairs needed before a ladder becomes a structured block (= the lib's IG_STRUCTURED_H3)
+  var LIST_MIN = 3;              // list items needed before a list becomes one (= the lib's IG_STRUCTURED_LI)
+  var CARD_MAX_WORDS = 60;       // a pair whose paragraph is longer than this breaks the ladder
+  var TOC_MIN = 3;
+  var TOC_MAX = 8;
+  var WORDS_PER_MINUTE = 220;
+  var INFOGRAPHIC_ALT_RE = /^(Checklist|Steps|Key figures):/;
+  var FAQ_RE = /frequently asked questions/i;
+  var SOURCES_RE = /^\s*sources\s*$/i;
+  var STAT_RE = /(\d[\d,.]*\s?%|[$€£]\s?\d|\d[\d,.]*\s?(percent|million|billion|x\b))/i;
+  var BUTTON_MAX_WORDS = 8;
+
+  function words(text) { var t = String(text || '').replace(/\s+/g, ' ').trim(); return t ? t.split(' ').length : 0; }
+  function slug(text) { return String(text || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60); }
+  function isTag(n, tag) { return !!n && n.nodeType === 1 && n.tagName === tag; }
+  function addClass(el, cls) { if ((' ' + el.className + ' ').indexOf(' ' + cls + ' ') === -1) el.className = (el.className ? el.className + ' ' : '') + cls; }
+
+  // a "text paragraph": a <p> with real prose, not a link-only line (the CTA button lines) and not empty
+  function isTextP(n) {
+    if (!isTag(n, 'P')) return false;
+    var text = (n.textContent || '').replace(/\s+/g, ' ').trim();
+    if (words(text) < 4) return false;
+    var a = n.querySelector('a');
+    if (a && (a.textContent || '').replace(/\s+/g, ' ').trim() === text) return false;
+    return true;
+  }
+
+  // ---- text-node geometry: flat offsets across a paragraph's text nodes -------------------------------------------
+  function textNodes(el) {
+    var out = [], walker = document.createTreeWalker(el, 4 /* SHOW_TEXT */, null, false), n;
+    while ((n = walker.nextNode())) out.push(n);
+    return out;
+  }
+  function pointAt(nodes, offset) {
+    var acc = 0;
+    for (var i = 0; i < nodes.length; i++) {
+      var len = nodes[i].nodeValue.length;
+      if (offset <= acc + len) return { node: nodes[i], offset: offset - acc };
+      acc += len;
+    }
+    var last = nodes[nodes.length - 1];
+    return { node: last, offset: last.nodeValue.length };
+  }
+  // sentence boundaries of a text: offsets just AFTER ". " / "? " / "! " where the next word starts with a capital,
+  // a digit or an opening quote; abbreviations like "e.g." are left alone by the capital rule most of the time
+  function boundaries(text) {
+    var out = [], re = /[.!?]["”’)]?\s+(?=["“(]?[A-Z0-9])/g, m;
+    while ((m = re.exec(text))) out.push(m.index + m[0].length);
+    return out;
+  }
+
+  // 1. split a long paragraph in two at the boundary nearest the middle --------------------------------------------
+  function splitLong(p) {
+    var text = p.textContent || '';
+    if (words(text) <= SPLIT_WORDS) return null;
+    var nodes = textNodes(p);
+    if (!nodes.length) return null;
+    var cuts = boundaries(text), best = -1, bestDist = Infinity, mid = text.length / 2;
+    for (var i = 0; i < cuts.length; i++) {
+      var head = text.slice(0, cuts[i]), tail = text.slice(cuts[i]);
+      if (words(head) < SPLIT_MIN_HALF || words(tail) < SPLIT_MIN_HALF) continue;
+      var d = Math.abs(cuts[i] - mid);
+      if (d < bestDist) { bestDist = d; best = cuts[i]; }
+    }
+    if (best < 0) return null;
+    var pt = pointAt(nodes, best), range = document.createRange();
+    range.setStart(pt.node, pt.offset);
+    range.setEnd(p, p.childNodes.length);
+    var frag = range.extractContents();
+    var next = document.createElement('p');
+    next.appendChild(frag);
+    if (next.firstChild && next.firstChild.nodeType === 3) next.firstChild.nodeValue = next.firstChild.nodeValue.replace(/^\s+/, '');
+    var lastText = textNodes(p); if (lastText.length) { var lt = lastText[lastText.length - 1]; lt.nodeValue = lt.nodeValue.replace(/\s+$/, ''); }
+    if (p.nextSibling) p.parentNode.insertBefore(next, p.nextSibling); else p.parentNode.appendChild(next);
+    return next;
+  }
+
+  // 4d. wrap the first stat sentence of a paragraph list in a span (max one) ----------------------------------------
+  function highlightStat(paras) {
+    for (var i = 0; i < paras.length; i++) {
+      var p = paras[i], text = p.textContent || '';
+      if (!STAT_RE.test(text)) continue;
+      var cuts = [0].concat(boundaries(text), [text.length]);
+      for (var k = 0; k + 1 < cuts.length; k++) {
+        var s = text.slice(cuts[k], cuts[k + 1]);
+        if (!STAT_RE.test(s) || words(s) < 5) continue;
+        var start = cuts[k], end = cuts[k + 1] - (s.length - s.replace(/\s+$/, '').length);
+        var nodes = textNodes(p), a = pointAt(nodes, start), b = pointAt(nodes, end);
+        var range = document.createRange();
+        try {
+          range.setStart(a.node, a.offset);
+          range.setEnd(b.node, b.offset);
+          var span = document.createElement('span');
+          span.className = 'mspl-hl';
+          range.surroundContents(span);
+          return true;
+        } catch (e) { return false; }   // the sentence straddles an inline element: leave it
+      }
+    }
+    return false;
+  }
+
+  // round 6 knob, set BEFORE this script: window.MSPL_LAYOUT = { structured: 'cards' | 'table', kicker: true | false,
+  //   footer: true | false, brand: { name, site, url } }. The brand (round 6c) falls back to the page itself: og:site_name
+  //   for the name, the host (www. dropped) for the site, the origin for the URL - so a site without the knob still
+  //   signs its blocks; a page that knows nothing (no meta, no host) draws no footer at all.
+  function brandOf(c) {
+    var b = c.brand || {};
+    var meta = document.querySelector('meta[property="og:site_name"]');
+    var loc = (typeof location !== 'undefined' && location.hostname) ? location : null;
+    return {
+      name: String(b.name || (meta && meta.getAttribute('content')) || '').replace(/\s+/g, ' ').trim(),
+      site: String(b.site || (loc ? loc.hostname.replace(/^www\./, '') : '')).trim(),
+      url: String(b.url || (loc ? loc.protocol + '//' + loc.host : '')).trim()
+    };
+  }
+  function config() {
+    var c = (typeof window !== 'undefined' && window.MSPL_LAYOUT) || {}, s = c.structured;
+    // the device per kind (6e): ladders default to the table, lists to the cards device; a string flips both
+    var devices = s === 'table' ? { points: 'table', list: 'table' }
+      : s === 'cards' ? { points: 'cards', list: 'cards' }
+      : { points: (s && s.points === 'cards') ? 'cards' : 'table', list: (s && s.list === 'table') ? 'table' : 'cards' };
+    // the brand line: null = per block (a table carries it, 6c; an on-page block never does, 6d); true / false force it
+    var footer = typeof c.footer === 'boolean' ? c.footer : null;
+    return { devices: devices, kicker: !!c.kicker, footer: footer, brand: brandOf(c) };
+  }
+  function deviceFor(kind, cfg) { return cfg.devices[kind === 'points' ? 'points' : 'list']; }
+
+  // the structured block (round 6): one wrapper, two devices (cards | table) switched by a modifier class, four kinds
+  // (points = H3 ladder, list = labelled bullets, rows = bullets without a bold label, steps = ordered list). The
+  // optional kicker is a data attribute the CSS draws with content: attr(), never a text node - the article's words
+  // stay the only text inside the block, plus the brand footer on a table (addFooter below).
+  // In the cards device every kind sits straight on the page with its own grammar, none of them the PNG figure's
+  // (Thanh, 6b: "not the same layout as the infographics we currently have"; 6d: the card grid "looked similar" and
+  // overwhelmed): the H3 ladder is a numbered list (--ladder, 6d - one column, a large numeral, the h3 TAG itself beside
+  // it, its paragraph under; the heading stays a heading, Thanh 6c), a labelled list is a lattice of tiles (--tiles,
+  // 6c: "a layout that looks more visual"), unlabelled rows or ordered steps run down a vertical accent rail (--rail, 6b).
+  function makeBlock(kind, n, cfg) {
+    var wrap = document.createElement('div');
+    var device = deviceFor(kind, cfg);
+    var extra = device !== 'cards' ? '' : (kind === 'points' ? ' mspl-ig--ladder' : kind === 'list' ? ' mspl-ig--tiles' : ' mspl-ig--rail');
+    wrap.className = 'mspl-ig mspl-ig--' + kind + ' mspl-ig--' + device + extra;
+    if (cfg.kicker) wrap.setAttribute('data-mspl-kicker', kind === 'steps' ? n + ' STEPS' : n + ' KEY POINTS');
+    return wrap;
+  }
+  // the brand line under a table block (round 6c): "Name · site", the site linked to the URL, like the PNG figure's
+  // footer but small - the only text the layout adds inside the article (the content diff excludes .mspl-ig__footer).
+  // Not on the on-page blocks (6d, Thanh: "in the middle of the content and kind of a bullet point").
+  function addFooter(wrap, cfg) {
+    var b = cfg.brand;
+    var on = cfg.footer === null ? (' ' + wrap.className + ' ').indexOf(' mspl-ig--table ') !== -1 : cfg.footer;
+    if (!on || !(b.name || b.site)) return;
+    var f = document.createElement('div');
+    f.className = 'mspl-ig__footer';
+    if (b.name) { var s = document.createElement('span'); s.className = 'mspl-ig__brand'; s.textContent = b.name; f.appendChild(s); }
+    if (b.name && b.site) f.appendChild(document.createTextNode(' · '));
+    if (b.site) { var a = document.createElement('a'); a.className = 'mspl-ig__site'; a.textContent = b.site; if (b.url) a.href = b.url; f.appendChild(a); }
+    wrap.appendChild(f);
+  }
+
+  // 4b. runs of H3 + one short paragraph -> a structured block of cards (each h3 + p pair moves into its card as it is)
+  function cardify(list, cfg) {
+    var i = 0, made = 0;
+    while (i < list.length) {
+      var pairs = [];
+      var j = i;
+      while (j + 1 < list.length && isTag(list[j], 'H3') && isTextP(list[j + 1]) && words(list[j + 1].textContent) <= CARD_MAX_WORDS && list[j].parentNode === list[j + 1].parentNode) {
+        pairs.push([list[j], list[j + 1]]);
+        j += 2;
+      }
+      if (pairs.length >= CARDS_MIN) {
+        var wrap = makeBlock('points', pairs.length, cfg);
+        var grid = document.createElement('div');
+        grid.className = 'mspl-ig__grid';
+        wrap.appendChild(grid);
+        pairs[0][0].parentNode.insertBefore(wrap, pairs[0][0]);
+        for (var k = 0; k < pairs.length; k++) {
+          var card = document.createElement('div');
+          card.className = 'mspl-ig__card';
+          card.appendChild(pairs[k][0]);   // the h3 itself, tag and all - never a copy of its text
+          card.appendChild(pairs[k][1]);
+          grid.appendChild(card);
+        }
+        addFooter(wrap, cfg);
+        made++;
+        i = j;
+      } else {
+        i = pairs.length ? j : i + 1;
+      }
+    }
+    return made;
+  }
+
+  // 4e. a list of LIST_MIN+ items -> the same block: the ul/ol stays the list (it is the grid), every li a card, a
+  // leading <strong> the card's label exactly as written (colon included), the rest of the item its detail. An item
+  // with block children (a nested list, a paragraph) is classed and otherwise left alone.
+  function leadingStrong(li) {
+    var n = li.firstChild;
+    while (n && n.nodeType === 3 && !n.nodeValue.trim()) n = n.nextSibling;
+    return (isTag(n, 'STRONG') || isTag(n, 'B')) ? n : null;
+  }
+  function hasBlockChild(li) {
+    for (var c = li.firstElementChild; c; c = c.nextElementSibling) { if (/^(UL|OL|P|DIV|TABLE|FIGURE|H[1-6])$/.test(c.tagName)) return true; }
+    return false;
+  }
+  function listify(list, cfg) {
+    var made = 0;
+    for (var i = 0; i < list.length; i++) {
+      var el = list[i];
+      if (!isTag(el, 'UL') && !isTag(el, 'OL')) continue;
+      var items = [], c;
+      for (c = el.firstElementChild; c; c = c.nextElementSibling) { if (isTag(c, 'LI')) items.push(c); }
+      if (items.length < LIST_MIN) continue;
+      var labelled = 0, k;
+      for (k = 0; k < items.length; k++) { if (leadingStrong(items[k])) labelled++; }
+      var kind = isTag(el, 'OL') ? 'steps' : (labelled * 2 >= items.length ? 'list' : 'rows');
+      var wrap = makeBlock(kind, items.length, cfg);
+      el.parentNode.insertBefore(wrap, el);
+      wrap.appendChild(el);
+      addClass(el, 'mspl-ig__grid');
+      for (k = 0; k < items.length; k++) {
+        var li = items[k];
+        addClass(li, 'mspl-ig__card');
+        var strong = leadingStrong(li);
+        if (strong) addClass(strong, 'mspl-ig__label');
+        if (hasBlockChild(li)) continue;
+        var detail = document.createElement('span');
+        detail.className = 'mspl-ig__detail';
+        var n = strong ? strong.nextSibling : li.firstChild;
+        while (n) { var next = n.nextSibling; detail.appendChild(n); n = next; }
+        li.appendChild(detail);
+      }
+      addFooter(wrap, cfg);
+      made++;
+    }
+    return made;
+  }
+
+  // 4c. the last paragraph of every run of RUN_MIN+ consecutive text paragraphs -> a callout ---------------------------
+  function calloutRuns(list) {
+    var run = [], made = 0;
+    // the lede counts towards the run (it is part of the wall) but is never the paragraph lifted out
+    var flush = function () {
+      var last = run[run.length - 1];
+      if (run.length >= RUN_MIN && last && last.className.indexOf('mspl-lede') === -1) { addClass(last, 'mspl-callout'); made++; }
+      run = [];
+    };
+    for (var i = 0; i < list.length; i++) {
+      if (isTextP(list[i])) run.push(list[i]);
+      else flush();
+    }
+    flush();
+    return made;
+  }
+
+  // the article as sections: intro (before the first direct H2) + one entry per direct H2 ------------------------------
+  function sectionsOf(root) {
+    var out = [], cur = { h2: null, nodes: [] }, n = root.firstElementChild;
+    while (n) {
+      if (n.tagName === 'H2') { out.push(cur); cur = { h2: n, nodes: [] }; }
+      else cur.nodes.push(n);
+      n = n.nextElementSibling;
+    }
+    out.push(cur);
+    return out;
+  }
+  function isBodySection(sec) {
+    if (!sec.h2) return false;
+    var t = sec.h2.textContent || '';
+    return !FAQ_RE.test(t) && !SOURCES_RE.test(t);
+  }
+  function hasOffer(sec) { for (var i = 0; i < sec.nodes.length; i++) if (sec.nodes[i].className && String(sec.nodes[i].className).indexOf('offer-card') !== -1) return true; return false; }
+
+  function layoutSections(root, cfg) {
+    var secs = sectionsOf(root), stats = { split: 0, ledes: 0, cards: 0, lists: 0, callouts: 0, highlights: 0 };
+    for (var s = 0; s < secs.length; s++) {
+      var sec = secs[s], body = isBodySection(sec);
+      // 1. splits first (they change the run lengths)
+      var i;
+      for (i = 0; i < sec.nodes.length; i++) {
+        if (!isTextP(sec.nodes[i])) continue;
+        var added = splitLong(sec.nodes[i]);
+        if (added) { sec.nodes.splice(i + 1, 0, added); stats.split++; }
+      }
+      if (!body) {
+        if (!sec.h2) { stats.highlights += highlightStat(sec.nodes.filter(isTextP)) ? 1 : 0; }   // the intro: stat only
+        continue;
+      }
+      // 4a. lede
+      if (isTextP(sec.nodes[0]) && words(sec.nodes[0].textContent) <= LEDE_MAX_WORDS) { addClass(sec.nodes[0], 'mspl-lede'); stats.ledes++; }
+      // 4b. cards
+      stats.cards += cardify(sec.nodes, cfg);
+      // 4c. callout (not in the CTA section, which ends on the offer banner)
+      if (!hasOffer(sec)) stats.callouts += calloutRuns(sec.nodes.filter(function (n) { return n.parentNode === root; }));
+      // 4d. one stat highlight
+      stats.highlights += highlightStat(sec.nodes.filter(function (n) { return isTextP(n) && n.parentNode === root; })) ? 1 : 0;
+      // 4e. lists last, so the run detection above still sees the list exactly where it was (a list breaks a run)
+      stats.lists += listify(sec.nodes, cfg);
+    }
+    return stats;
+  }
+
+  // 2. reading time ---------------------------------------------------------------------------------------------------
+  function readingTime(root) {
+    var mins = Math.max(1, Math.round(words(root.textContent) / WORDS_PER_MINUTE));
+    var meta = document.querySelector('.mspl-post-meta');
+    if (!meta || meta.getAttribute('data-mspl-rt') === '1') return;
+    meta.setAttribute('data-mspl-rt', '1');
+    var sep = document.createElement('span'); sep.className = 'mspl-post-meta__sep'; sep.textContent = ' · ';
+    var rt = document.createElement('span'); rt.className = 'mspl-post-meta__rt'; rt.textContent = mins + ' min read';
+    meta.appendChild(sep); meta.appendChild(rt);
+  }
+
+  // 3. figures ---------------------------------------------------------------------------------------------------------
+  function classifyFigures(root) {
+    var figs = root.querySelectorAll('figure');
+    for (var i = 0; i < figs.length; i++) {
+      var img = figs[i].querySelector('img');
+      if (!img) continue;
+      addClass(figs[i], INFOGRAPHIC_ALT_RE.test(img.getAttribute('alt') || '') ? 'mspl-infographic' : 'mspl-photo');
+    }
+  }
+
+  // 5. contents strip --------------------------------------------------------------------------------------------------
+  function directH2s(root) { var out = [], n = root.firstElementChild; while (n) { if (n.tagName === 'H2') out.push(n); n = n.nextElementSibling; } return out; }
+  function buildToc(root) {
+    var h2s = directH2s(root), entries = [];
+    for (var i = 0; i < h2s.length; i++) {
+      var h = h2s[i], t = h.textContent || '';
+      if (FAQ_RE.test(t) || SOURCES_RE.test(t)) continue;
+      if (!h.id) h.id = 'section-' + (i + 1) + '-' + slug(t);
+      entries.push(h);
+    }
+    if (entries.length < TOC_MIN || !h2s.length) return 0;
+    entries = entries.slice(0, TOC_MAX);
+    var nav = document.createElement('nav');
+    nav.className = 'mspl-toc';
+    nav.setAttribute('aria-label', 'On this page');
+    for (var k = 0; k < entries.length; k++) {
+      // the pipeline's Inject step writes a 2-4 word chip label + an icon on each body H2 (data attributes); a
+      // heading without them (an older post, an editor save that dropped attributes) shows its full text instead
+      var h2 = entries[k], a = document.createElement('a');
+      var icon = h2.getAttribute('data-mspl-icon'), label = h2.getAttribute('data-mspl-label');
+      a.href = '#' + h2.id;
+      if (icon) { var ic = document.createElement('span'); ic.className = 'mspl-toc__icon'; ic.setAttribute('aria-hidden', 'true'); ic.textContent = icon; a.appendChild(ic); }
+      a.appendChild(document.createTextNode(label || h2.textContent));
+      if (label) a.title = h2.textContent;
+      nav.appendChild(a);
+    }
+    // cinchops' order: summary band, then the strip, then the article - so right after the TL;DR card when there is one
+    var first = root.firstElementChild;
+    var anchor = (first && /(^|\s)tldr-card(\s|$)/.test(first.className || '')) ? first.nextSibling : h2s[0];
+    root.insertBefore(nav, anchor);
+    return entries.length;
+  }
+
+  // 6. CTA buttons: only where the site's own classes did not draw one ---------------------------------------------------
+  function isTransparent(el) { var bg = window.getComputedStyle(el).backgroundColor; return !bg || bg === 'transparent' || /^rgba\(\s*\d+,\s*\d+,\s*\d+,\s*0\s*\)$/.test(bg); }
+  function buttonFallback(root) {
+    var anchors = root.querySelectorAll('p > a'), made = 0;
+    for (var i = 0; i < anchors.length; i++) {
+      var a = anchors[i], p = a.parentNode, text = (a.textContent || '').replace(/\s+/g, ' ').trim();
+      if (!text || words(text) > BUTTON_MAX_WORDS) continue;
+      if ((p.textContent || '').replace(/\s+/g, ' ').trim() !== text) continue;      // the line must be the link alone
+      var inner = a.querySelector('span'); var probe = inner || a;
+      var deepest = probe; while (deepest.firstElementChild && deepest.firstElementChild.tagName === 'SPAN') deepest = deepest.firstElementChild;
+      if (!isTransparent(deepest) || !isTransparent(probe) || !isTransparent(a)) continue;   // the site drew a button
+      if (!inner && !a.hasAttribute('style')) continue;                                    // a plain prose link
+      addClass(a, 'mspl-btn');
+      addClass(p, 'mspl-btn-line');
+      made++;
+    }
+    return made;
+  }
+
+  // 7. sources --------------------------------------------------------------------------------------------------------
+  function collapseSources(root) {
+    var h2s = directH2s(root), h2 = null;
+    for (var i = 0; i < h2s.length; i++) { if (SOURCES_RE.test(h2s[i].textContent || '')) { h2 = h2s[i]; break; } }
+    if (!h2) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'mspl-sources';
+    root.insertBefore(wrap, h2);
+    var list = document.createElement('div');
+    list.className = 'mspl-sources__list';
+    list.id = 'mspl-sources-list';
+    var n = h2.nextElementSibling, count = 0;
+    while (n && n.tagName !== 'H2') { var next = n.nextElementSibling; list.appendChild(n); count += n.tagName === 'UL' || n.tagName === 'OL' ? n.children.length : 1; n = next; }
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'mspl-sources__toggle';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-controls', list.id);
+    while (h2.firstChild) btn.appendChild(h2.firstChild);
+    btn.appendChild(document.createTextNode(' (' + count + ')'));
+    h2.appendChild(btn);
+    wrap.appendChild(h2);
+    list.setAttribute('hidden', '');
+    wrap.appendChild(list);
+    btn.addEventListener('click', function () {
+      var open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+      if (open) list.setAttribute('hidden', ''); else list.removeAttribute('hidden');
+    });
+  }
+
+  function init() {
+    var roots = document.querySelectorAll('.blog-details-content .w-richtext, .w-richtext');
+    var root = roots.length ? roots[0] : null;
+    if (!root || root.getAttribute('data-mspl-layout') === '3') return;
+    root.setAttribute('data-mspl-layout', '3');
+    readingTime(root);
+    classifyFigures(root);
+    var stats = layoutSections(root, config());
+    stats.toc = buildToc(root);
+    stats.buttons = buttonFallback(root);
+    collapseSources(root);
+    root.setAttribute('data-mspl-layout-stats', JSON.stringify(stats));
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();

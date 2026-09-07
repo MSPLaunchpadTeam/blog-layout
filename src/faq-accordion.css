@@ -1,0 +1,30 @@
+/* faq-accordion.css - MSP Launchpad blog FAQ accordion (pairs with faq-accordion.js). */
+.mspl-faq__item { border-bottom: 1px solid #e5e7eb; }
+.mspl-faq__item h3 { margin: 0; }
+.mspl-faq__q {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 14px 40px 14px 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  position: relative;
+}
+.mspl-faq__q::after {
+  content: "+";
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 400;
+  line-height: 1;
+}
+.mspl-faq__q[aria-expanded="true"]::after { content: "\2212"; }
+.mspl-faq__a { padding: 0 0 14px; }
+.mspl-faq__a > :last-child { margin-bottom: 0; }
+[hidden] { display: none !important; }
