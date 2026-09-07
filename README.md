@@ -26,6 +26,8 @@ Two lines on the **Blog Posts template page**, before `</body>`, after the Refok
 ```
 
 `@3` is the jsDelivr **major range**: it resolves to the newest `3.x.y` tag, so a release never touches a site.
+No `integrity=` hash on purpose: a range URL changes content with every release, and an SRI hash would break the page
+at the first release. A site that wants SRI pins an exact tag (`@v3.1.0`) and adds the hash, at the cost of a re-paste per release.
 Nothing goes into a post: Webflow's rich-text editor strips embeds, `<div>` wrappers and inline styles the first time
 someone saves the post in the Designer / Editor (measured 2026-09-07 on the Allied Sandbox), which is why v3.1 rebuilds the
 TL;DR card and the offer card from plain markup and why the per-post embed of v3.0 was retired.
