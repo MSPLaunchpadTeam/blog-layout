@@ -14,7 +14,14 @@
         c-button-main-1 / c-button-wrap-1 while the pipeline writes c-button-main / c-button-wrap, so the button
         never renders there; a site whose classes match keeps its own button)
      7. the Sources section wrapped and collapsed behind its own H2 (the H2 stays an H2; the button sits inside it)
-   Plain ES5, idempotent (data-mspl-layout guard), no dependencies - pastes into a Webflow embed as-is.
+     8. (v3.1, 2026-09-07) the TL;DR card and the offer card rebuilt from plain markup when a Designer / Editor save
+        stripped their wrappers (Webflow's rich-text editor re-serialises an API-written post: divs, inline styles
+        and embeds go, the paragraphs, the H2 data attributes and the figures stay) - only on a post the pipeline
+        wrote (a kept data-mspl-label), never on an older post whose first paragraph is just an intro
+     9. (v3.1) the accent = the site's own --primary-1 (layout-v3.css :root does it in CSS); a site without the
+        variable gets the colour of its own button; the source is recorded in data-mspl-accent on the root
+   Plain ES5, idempotent (data-mspl-layout guard), no dependencies - loads from the Blog Posts template (the paste in
+   webflow/blog-template-paste.html; a per-post embed does not survive an editor save).
    Knob (optional, one line BEFORE this script):
      window.MSPL_LAYOUT = { structured: 'table' | 'cards' | { points: 'table' | 'cards', list: 'cards' | 'table' },
                             kicker: false, footer: true | false,
@@ -437,17 +444,96 @@
     });
   }
 
+  // 8. (v3.1) the two cards the editor strips: rebuilt from the plain markup, on a pipeline post only ----------------
+  // A pipeline post carries a chip label on its body H2s (the Inject step writes them; an editor save keeps them).
+  // An older post has none: its first paragraph is an intro, not a summary, and gets no TL;DR badge.
+  function isPipelinePost(root) { return !!root.querySelector('h2[data-mspl-label]'); }
+  function rebuildTldr(root) {
+    if (root.querySelector('.tldr-card')) return 0;
+    var first = root.firstElementChild;
+    if (!isTextP(first) || !first.nextElementSibling) return 0;   // one summary paragraph, then the article
+    var card = document.createElement('div');
+    card.className = 'tldr-card';
+    root.insertBefore(card, first);
+    card.appendChild(first);
+    return 1;
+  }
+  // a button line = a paragraph that is one short link and nothing else (the pipeline's CTA lines)
+  function isButtonLine(n) {
+    if (!isTag(n, 'P')) return false;
+    var a = n.querySelector('a'), text = (n.textContent || '').replace(/\s+/g, ' ').trim();
+    return !!a && !!text && words(text) <= BUTTON_MAX_WORDS && (a.textContent || '').replace(/\s+/g, ' ').trim() === text;
+  }
+  // the offer = the LAST body section (above the FAQ / Sources): its H2, at most two paragraphs, ending on a button line
+  function rebuildOffer(root) {
+    if (root.querySelector('.offer-card')) return 0;
+    var secs = sectionsOf(root);
+    for (var s = secs.length - 1; s >= 1; s--) {
+      var sec = secs[s];
+      if (!isBodySection(sec)) continue;
+      var n = sec.nodes;
+      if (!n.length || n.length > 3 || !isButtonLine(n[n.length - 1])) return 0;
+      for (var i = 0; i < n.length - 1; i++) { if (!isTag(n[i], 'P')) return 0; }
+      var card = document.createElement('div');
+      card.className = 'offer-card';
+      root.insertBefore(card, sec.h2);
+      card.appendChild(sec.h2);
+      for (var k = 0; k < n.length; k++) card.appendChild(n[k]);
+      return 1;
+    }
+    return 0;
+  }
+
+  // 9. (v3.1) the accent: --primary-1 is the site's own brand variable and layout-v3.css already reads it; a site
+  // without it gets the colour of its own button (the first .w-button / c-button-main* outside the article with a
+  // real, non-grey background), else the CSS default. The source lands in data-mspl-accent for --read-exec / tests.
+  function parseRgb(bg) {
+    var m = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/.exec(String(bg || '').trim());
+    return m ? { r: +m[1], g: +m[2], b: +m[3], a: m[4] === undefined ? 1 : +m[4] } : null;
+  }
+  function isBrandColour(c) {
+    if (!c || c.a < 0.99) return false;
+    var mx = Math.max(c.r, c.g, c.b), mn = Math.min(c.r, c.g, c.b);
+    if (mn > 235) return false;        // white-ish
+    if (mx < 40) return false;         // black-ish
+    if (mx - mn < 40) return false;    // grey
+    return true;
+  }
+  function applyAccent(root) {
+    var v = '';
+    try { v = String(window.getComputedStyle(document.documentElement).getPropertyValue('--primary-1') || '').trim(); } catch (e) { v = ''; }
+    if (v) { root.setAttribute('data-mspl-accent', '--primary-1'); return '--primary-1'; }
+    var btns = document.querySelectorAll('.w-button, [class*="c-button-main"]');
+    for (var i = 0; i < btns.length; i++) {
+      if (root.contains(btns[i])) continue;   // the article's own CTA is drawn BY the accent
+      var c = parseRgb(window.getComputedStyle(btns[i]).backgroundColor);
+      if (isBrandColour(c)) {
+        root.style.setProperty('--mspl-accent', 'rgb(' + c.r + ', ' + c.g + ', ' + c.b + ')');
+        root.setAttribute('data-mspl-accent', 'button');
+        return 'button';
+      }
+    }
+    root.setAttribute('data-mspl-accent', 'css-default');
+    return 'css-default';
+  }
+
   function init() {
     var roots = document.querySelectorAll('.blog-details-content .w-richtext, .w-richtext');
     var root = roots.length ? roots[0] : null;
     if (!root || root.getAttribute('data-mspl-layout') === '3') return;
     root.setAttribute('data-mspl-layout', '3');
+    var accent = applyAccent(root);
+    var rebuilt = { tldr: 0, offer: 0 };
+    if (isPipelinePost(root)) { rebuilt.tldr = rebuildTldr(root); rebuilt.offer = rebuildOffer(root); }
     readingTime(root);
     classifyFigures(root);
     var stats = layoutSections(root, config());
     stats.toc = buildToc(root);
     stats.buttons = buttonFallback(root);
     collapseSources(root);
+    stats.tldr = rebuilt.tldr;
+    stats.offer = rebuilt.offer;
+    stats.accent = accent;
     root.setAttribute('data-mspl-layout-stats', JSON.stringify(stats));
   }
 

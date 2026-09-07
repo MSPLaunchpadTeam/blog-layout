@@ -1,6 +1,7 @@
 # blog-layout
 
-The MSP Launchpad blog reading layout (layout v3 + the FAQ accordion), served to every blog post through jsDelivr.
+The MSP Launchpad blog reading layout (layout v3 + the FAQ accordion), served to every blog post through jsDelivr from the
+Blog Posts template page of each site.
 
 ## What is here
 
@@ -12,43 +13,52 @@ The MSP Launchpad blog reading layout (layout v3 + the FAQ accordion), served to
 
 Source of truth for edits: the EA repo, `projects/blog-infographics/preview/assets/`. Rebuild with
 `node projects/blog-infographics/webflow/build_layout_bundle.mjs --out <this clone>`; `test/bundle.test.mjs` there guards the
-committed `webflow/dist/` copies against staleness.
+committed `webflow/dist/` copies against staleness. The first line of each bundle carries the version it was built as.
 
-## How a post loads it
+## How a site loads it (once, in the Designer)
 
-The n8n blog copy appends ONE thin custom-code block to the end of every post's rich text (the article itself stays plain H2/H3/P):
+Two lines on the **Blog Posts template page**, before `</body>`, after the Refokus rich-text-enhancer line
+(the paste file: EA repo `projects/blog-infographics/webflow/blog-template-paste.html`):
 
 ```html
-<div class="w-embed w-script">
-  <script>window.MSPL_LAYOUT={"kicker":false,"brand":{"name":"Client name","site":"client.com","url":"https://client.com"}};</script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/MSPLaunchpadTeam/blog-layout@v3.0.0/blog-layout.css">
-  <script src="https://cdn.jsdelivr.net/gh/MSPLaunchpadTeam/blog-layout@v3.0.0/blog-layout.js" defer></script>
-</div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/MSPLaunchpadTeam/blog-layout@3/blog-layout.css">
+<script src="https://cdn.jsdelivr.net/gh/MSPLaunchpadTeam/blog-layout@3/blog-layout.js" defer></script>
 ```
 
-The base URL comes from the n8n Variable `BLOG_LAYOUT_BASE` (fallback: the constant in the `Layout - Embed` Code node).
-The same three lines also work as a Blog Template page paste (before `</body>`, after the Refokus rich-text-enhancer line).
+`@3` is the jsDelivr **major range**: it resolves to the newest `3.x.y` tag, so a release never touches a site.
+Nothing goes into a post: Webflow's rich-text editor strips embeds, `<div>` wrappers and inline styles the first time
+someone saves the post in the Designer / Editor (measured 2026-09-07 on the Allied Sandbox), which is why v3.1 rebuilds the
+TL;DR card and the offer card from plain markup and why the per-post embed of v3.0 was retired.
 
-## The knob (`window.MSPL_LAYOUT`, set BEFORE the script)
+## What the script derives from the page (no knob needed)
+
+- **Accent**: the site's own Webflow variable `--primary-1` (`blog-layout.css` reads it: `--mspl-accent: var(--primary-1, #e33b40)`);
+  a site without it gets the colour of its own button; the source is recorded in `data-mspl-accent` on the rich text.
+- **Brand line** under a table block: `og:site_name` + the page host.
+- **TL;DR / offer cards**: rebuilt when their wrappers are gone, on a post the pipeline wrote (a kept `data-mspl-label`), never on an older post.
+
+## The knob (`window.MSPL_LAYOUT`, optional, set BEFORE the script)
 
 - `structured`: `'table' | 'cards' | { points: 'table' | 'cards', list: 'cards' | 'table' }` - default: H3 ladders as a table, bullet lists as tiles
 - `kicker`: `true | false` - the "N KEY POINTS" pill (off by default)
 - `footer`: `true | false` - the brand line (default: on a table only)
-- `brand`: `{ name, site, url }` - the values the brand line is drawn from (fallback: `og:site_name` + the page host)
+- `brand`: `{ name, site, url }` - overrides the page-derived brand line
 
-CSS knobs are the variables at the top of `blog-layout.css` (`--mspl-accent`, `--mspl-measure`, ...). A per-client accent
-override is one line before the stylesheet: `<style>:root{--mspl-accent:#0f766e}</style>`.
+CSS knobs are the variables at the top of `blog-layout.css` (`--mspl-accent`, `--mspl-measure`, ...). A per-site accent
+override, if a site's `--primary-1` is not the colour wanted: one line before the stylesheet, `<style>:root{--mspl-accent:#0f766e}</style>`.
 
 ## Release recipe (the team edits ONE place)
 
 1. Edit the sources in the EA repo (`preview/assets/`), run the tests there (`node --test "projects/blog-infographics/test/*.test.mjs"`), look at the localhost preview.
-2. `node projects/blog-infographics/webflow/build_layout_bundle.mjs --out <this clone>` and copy the four sources into `src/`.
-3. Commit, tag `vMAJOR.MINOR.PATCH`, `git push && git push --tags`.
-4. Bump the n8n Variable `BLOG_LAYOUT_BASE` to `https://cdn.jsdelivr.net/gh/MSPLaunchpadTeam/blog-layout@<new tag>`.
+2. Bump `VERSION` in `projects/blog-infographics/webflow/build_layout_bundle.mjs`, run it (dist + paste), then `--out <this clone>` and copy the four sources into `src/`.
+3. Commit, tag `v<VERSION>`, `git push && git push --tags`.
+4. Check `https://cdn.jsdelivr.net/gh/MSPLaunchpadTeam/blog-layout@3/blog-layout.js` serves the new first line (the range re-resolves within hours; the exact tag URL is immediate).
 
-jsDelivr caches a tag permanently: never move or delete a published tag; cut a new one. Existing posts keep the tag they were
-published with (pinned, reproducible); new posts pick up the new tag from the variable.
+jsDelivr caches an exact tag permanently: never move or delete a published tag; cut a new one. Keep every 3.x release
+backward-compatible (same markup contract) because every site on `@3` picks it up without a re-paste; a breaking change is a `v4`
+and a new paste.
 
 ## Versions
 
-- `v3.0.0` (2026-09-07) - layout v3 after review round 6g (approved by Thanh 2026-09-07) + the FAQ accordion.
+- `v3.1.0` (2026-09-07) - editor-proof: the TL;DR + offer cards rebuilt from plain markup after a Designer save; accent = the site's `--primary-1` (button-colour fallback); loaded from the template on the `@3` range.
+- `v3.0.0` (2026-09-07) - layout v3 after review round 6g (approved by Thanh 2026-09-07) + the FAQ accordion; per-post embed (retired).
