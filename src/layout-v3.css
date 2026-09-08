@@ -60,8 +60,9 @@
 /* Inline links follow their sentence, including smaller table/FAQ text and responsive ledes. */
 .w-richtext :is(p, li, blockquote) a:not(.mspl-btn):not(.mspl-offer-button) { font-size: inherit !important; line-height: inherit !important; }
 
-/* the lede: the first paragraph after each section heading answers it - set as a deck, cinchops' "takeaway" */
-.w-richtext p.mspl-lede { font-size: calc(var(--mspl-body) + 0.5px) !important; line-height: 1.6 !important; font-weight: 600; color: var(--mspl-ink); margin-bottom: 16px !important; }
+/* Section openings keep the small size lift; importance belongs to editable inline strong tags. */
+.w-richtext p.mspl-lede { font-size: calc(var(--mspl-body) + 0.5px) !important; line-height: 1.6 !important; font-weight: 400 !important; color: var(--mspl-ink); margin-bottom: 16px !important; }
+.w-richtext :is(p, li) :is(strong, b) { font-size: inherit !important; line-height: inherit !important; font-weight: 700; }
 
 /* the stat sentence: one per section, a marker-pen tint under ink text (a whole sentence in brand red shouts) */
 .w-richtext .mspl-hl {
