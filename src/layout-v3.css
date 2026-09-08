@@ -448,6 +448,9 @@
 .w-richtext .mspl-sources__list p, .w-richtext .mspl-sources__list li { font-size: 14px !important; line-height: 1.5 !important; color: var(--mspl-muted); margin-bottom: 4px !important; overflow-wrap: anywhere; }
 .w-richtext .mspl-sources__list a { color: var(--mspl-muted); }
 
+/* Empty optional CMS embeds otherwise each consume a flex gap above the author box. */
+.blog-details-content > .w-embed:empty { display: none; }
+
 /* 12. Author box (cinchops' "About the Author" card) under the article. On a site: Designer elements bound to
       Blog -> Author (the Team collection: Avatar, Name, Position, Bio, item page), placed after the rich text with
       these classes; the preview renders the same markup from preview/authors.json. Same left edge, same measure. */
