@@ -178,7 +178,7 @@
 .w-richtext figure { margin: 26px 0 !important; border-bottom: 0 !important; max-width: 100% !important; }
 .w-richtext figure div { border-radius: var(--mspl-radius); overflow: hidden; }
 .w-richtext figure img { display: block; width: 100%; height: auto; }
-.w-richtext figure.mspl-photo img { aspect-ratio: 16 / 9; object-fit: cover; }
+.w-richtext figure.mspl-photo img { aspect-ratio: auto !important; height: auto !important; max-width: 100%; object-fit: contain !important; }
 /* infographics and the CTA banner stay inside the column: one left edge for everything (round 4) */
 .w-richtext figure.mspl-infographic { max-width: 100% !important; margin-top: 30px !important; margin-bottom: 30px !important; }
 .w-richtext figure.mspl-infographic div { border-radius: 14px; box-shadow: var(--mspl-shadow); border: 1px solid var(--mspl-rule); }
