@@ -304,7 +304,7 @@
 .w-richtext .mspl-ig--tiles .mspl-ig__card::after { left: calc(var(--mspl-tile-x) + 16px); top: 29px; width: 7px; height: 13px; border-width: 2.5px; border-color: var(--mspl-accent); }   /* the accent check in it */
 .w-richtext .mspl-ig--tiles .mspl-ig__label { min-height: 0; padding: 8px 0 0; font-size: 17px !important; line-height: 1.35 !important; margin: 0 0 6px !important; }   /* 8 px down = a one-line label centred on the square; a wrapped label starts there too */
 .w-richtext .mspl-ig--tiles .mspl-ig__detail { font-size: 15.5px !important; line-height: 1.6 !important; }
-/* the brand footer (round 6c, Thanh: the name, the website name and the URL, smaller, at the bottom of the table):
+/* The table footer keeps the brand name only; website URLs were removed on 2026-09-08:
    layout-v3.js appends "Name · site" (the site linked to the URL) as the last line of every TABLE block, from
    window.MSPL_LAYOUT.brand or the page itself (og:site_name + host). Centred inside the panel like the PNG figure's own
    footer. Not on the on-page blocks (6d: mid-content, list-like) unless footer: true - then a credit line at the right. */
@@ -405,6 +405,20 @@
 .w-richtext .mspl-btn:hover { filter: brightness(0.94); transform: translateY(-1px); }
 .w-richtext .mspl-btn span { display: inline; color: inherit; }   /* the token spans inside the anchor render as plain text */
 .w-richtext p.mspl-btn-line { margin: 20px 0 10px !important; }
+
+/* Keep the offer button legible in sites whose secondary colour matches this banner.
+   Scope to actual button surfaces; ordinary offer links retain their normal styling. */
+.w-richtext .offer-card [class*="c-button-main"],
+.w-richtext .offer-card [class*="c-button-main"]:hover,
+.w-richtext .offer-card .mspl-btn,
+.w-richtext .offer-card .mspl-btn:hover {
+  background-color: var(--mspl-accent) !important;
+  color: #ffffff !important;
+  filter: none !important;
+}
+.w-richtext .offer-card [class*="c-button-main"] *,
+.w-richtext .offer-card .mspl-btn span { color: inherit !important; }
+.w-richtext .offer-card a:focus-visible { outline: 2px solid #ffffff; outline-offset: 4px; }
 
 /* 9. FAQ accordion: the question stays an H3 at question-row size, brand chevron -------------------------------- */
 .w-richtext .mspl-faq__item { border-bottom: 1px solid var(--mspl-rule); }

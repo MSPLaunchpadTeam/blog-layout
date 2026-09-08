@@ -29,9 +29,9 @@
    Default device per kind (round 6e): an H3 ladder is a TABLE (Thanh: "less wordy, easier to absorb"), a bullet list
    is on the cards device (tiles / rail); 'table' or 'cards' flips every block, the object form sets each kind.
    Nothing here adds a word to the ARTICLE: numbers, check marks and the optional kicker are CSS decoration. The one
-   line the script adds is the brand footer under a TABLE block (round 6c, Thanh: the name, the website name and the URL,
+   line the script adds is the brand footer under a TABLE block (round 6c, Thanh: the brand name (website URLs removed 2026-09-08),
    smaller, at the bottom of the table; 6d: not on the on-page blocks, which sit mid-content and read as lists) - from
-   the knob, else og:site_name + the page's own host; footer: true forces it everywhere, footer: false drops it. */
+   the knob, else og:site_name; footer: true forces it everywhere, footer: false drops it. */
 (function () {
   'use strict';
   var SPLIT_WORDS = 60;          // a paragraph longer than this is split ...
@@ -150,8 +150,7 @@
 
   // round 6 knob, set BEFORE this script: window.MSPL_LAYOUT = { structured: 'cards' | 'table', kicker: true | false,
   //   footer: true | false, brand: { name, site, url } }. The brand (round 6c) falls back to the page itself: og:site_name
-  //   for the name, the host (www. dropped) for the site, the origin for the URL - so a site without the knob still
-  //   signs its blocks; a page that knows nothing (no meta, no host) draws no footer at all.
+  //   for the name. Legacy site/url config keys remain accepted, but table credits never render them.
   function brandOf(c) {
     var b = c.brand || {};
     var meta = document.querySelector('meta[property="og:site_name"]');
@@ -191,18 +190,17 @@
     if (cfg.kicker) wrap.setAttribute('data-mspl-kicker', kind === 'steps' ? n + ' STEPS' : n + ' KEY POINTS');
     return wrap;
   }
-  // the brand line under a table block (round 6c): "Name · site", the site linked to the URL, like the PNG figure's
+  // The table credit is the brand name only (2026-09-08 feedback); never add a site hostname or URL.
+  // Unlike the PNG figure's
   // footer but small - the only text the layout adds inside the article (the content diff excludes .mspl-ig__footer).
   // Not on the on-page blocks (6d, Thanh: "in the middle of the content and kind of a bullet point").
   function addFooter(wrap, cfg) {
     var b = cfg.brand;
     var on = cfg.footer === null ? (' ' + wrap.className + ' ').indexOf(' mspl-ig--table ') !== -1 : cfg.footer;
-    if (!on || !(b.name || b.site)) return;
+    if (!on || !b.name) return;
     var f = document.createElement('div');
     f.className = 'mspl-ig__footer';
     if (b.name) { var s = document.createElement('span'); s.className = 'mspl-ig__brand'; s.textContent = b.name; f.appendChild(s); }
-    if (b.name && b.site) f.appendChild(document.createTextNode(' · '));
-    if (b.site) { var a = document.createElement('a'); a.className = 'mspl-ig__site'; a.textContent = b.site; if (b.url) a.href = b.url; f.appendChild(a); }
     wrap.appendChild(f);
   }
 
@@ -473,7 +471,7 @@
     list.className = 'mspl-sources__list';
     uniqueId(list, 'mspl-sources-list');
     var n = h2.nextElementSibling, count = 0;
-    while (n && n.tagName !== 'H2') { var next = n.nextElementSibling; list.appendChild(n); count += n.tagName === 'UL' || n.tagName === 'OL' ? n.children.length : 1; n = next; }
+    while (n && n.tagName !== 'H2') { var next = n.nextElementSibling; list.appendChild(n); count += n.querySelectorAll('a[href]').length; n = next; }
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'mspl-sources__toggle';
