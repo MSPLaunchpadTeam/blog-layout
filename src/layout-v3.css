@@ -57,6 +57,8 @@
 .w-richtext > h2:first-child { padding-top: 0; }
 .w-richtext h3 { font-size: 20px !important; line-height: 1.35 !important; font-weight: 700 !important; color: var(--mspl-ink); margin: 26px 0 6px !important; }
 .w-richtext p > a:not(.mspl-btn) { color: var(--mspl-accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; font-weight: 600; }
+/* Inline links follow their sentence, including smaller table/FAQ text and responsive ledes. */
+.w-richtext :is(p, li, blockquote) a:not(.mspl-btn):not(.mspl-offer-button) { font-size: inherit !important; line-height: inherit !important; }
 
 /* the lede: the first paragraph after each section heading answers it - set as a deck, cinchops' "takeaway" */
 .w-richtext p.mspl-lede { font-size: 18.5px !important; line-height: 1.6 !important; font-weight: 600; color: var(--mspl-ink); margin-bottom: 16px !important; }
