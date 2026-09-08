@@ -106,7 +106,7 @@
   margin: 0 0 12px !important;
 }
 .w-richtext .tldr-card::before {
-  content: "TL;DR";
+  content: "In short";
   flex: none;
   background: var(--mspl-accent);
   color: #ffffff;
@@ -122,7 +122,9 @@
 
 /* 5. Contents strip (cinchops' toc-strip): icon + 2-4 word chip per section, one line under the TL;DR band.
       layout-v3.js builds it from the body H2s; the chip label + icon are data attributes the pipeline writes ------- */
-.w-richtext .mspl-toc { display: flex; flex-wrap: wrap; align-items: center; gap: 0 2px; padding: 4px 0; margin: 0 0 22px; border-top: 1px solid var(--mspl-rule); border-bottom: 1px solid var(--mspl-rule); contain: inline-size; }   /* contain: the unbreakable chips must never widen the column (flex min-content trap) */
+.w-richtext .mspl-toc { padding: 14px 0 4px; margin: 0 0 22px; border-top: 1px solid var(--mspl-rule); border-bottom: 1px solid var(--mspl-rule); contain: inline-size; }
+.w-richtext .mspl-toc__title { color: var(--mspl-ink); font-size: 16px; font-weight: 700; line-height: 1.4; margin-bottom: 6px; }
+.w-richtext .mspl-toc__links { display: flex; flex-wrap: wrap; align-items: center; gap: 0 2px; min-width: 0; }
 .w-richtext .mspl-toc a {
   display: inline-flex;
   align-items: center;
@@ -419,6 +421,14 @@
 .w-richtext .offer-card [class*="c-button-main"] *,
 .w-richtext .offer-card .mspl-btn span { color: inherit !important; }
 .w-richtext .offer-card a:focus-visible { outline: 2px solid #ffffff; outline-offset: 4px; }
+.w-richtext .offer-card a.mspl-offer-button { display: inline-block; max-width: 100%; transition: transform 0.15s ease; }
+.w-richtext .offer-card a.mspl-offer-button,
+.w-richtext .offer-card a.mspl-offer-button * { text-decoration: none !important; }
+.w-richtext .offer-card a.mspl-offer-button:hover { transform: translateY(-1px); filter: none; }
+@media (prefers-reduced-motion: reduce) {
+  .w-richtext .offer-card a.mspl-offer-button { transition: none; }
+  .w-richtext .offer-card a.mspl-offer-button:hover { transform: none; }
+}
 
 /* 9. FAQ accordion: the question stays an H3 at question-row size, brand chevron -------------------------------- */
 .w-richtext .mspl-faq__item { border-bottom: 1px solid var(--mspl-rule); }
@@ -440,13 +450,19 @@
 .w-richtext .mspl-faq__a p { font-size: 16px !important; }
 
 /* 10. Sources: collapsed, quiet (layout-v3.js wraps the section) ----------------------------------------------- */
-.w-richtext .mspl-sources { margin-top: 30px; border-top: 1px solid var(--mspl-rule); padding-top: 10px; }
-.w-richtext .mspl-sources h2 { font-size: 13px !important; margin: 0 !important; padding: 0 !important; border: 0 !important; letter-spacing: 1.5px; text-transform: uppercase; color: var(--mspl-muted); }
-.w-richtext .mspl-sources__toggle { background: none; border: 0; padding: 8px 0; font: inherit; color: inherit; cursor: pointer; }
+.w-richtext .mspl-sources { margin-top: 32px; border: 1px solid var(--mspl-rule); border-radius: 12px; padding: 20px 24px; background: var(--mspl-paper, #fff); }
+.w-richtext .mspl-sources h2 { font-size: 18px !important; line-height: 1.4 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; letter-spacing: 0; text-transform: none; color: var(--mspl-ink); }
+.w-richtext .mspl-sources__toggle { display: flex; justify-content: space-between; gap: 16px; width: 100%; text-align: left; background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+.w-richtext .mspl-sources__toggle:focus-visible { outline: 2px solid var(--mspl-accent); outline-offset: 5px; }
 .w-richtext .mspl-sources__toggle::after { content: " \25BE"; }
 .w-richtext .mspl-sources__toggle[aria-expanded="true"]::after { content: " \25B4"; }
-.w-richtext .mspl-sources__list p, .w-richtext .mspl-sources__list li { font-size: 14px !important; line-height: 1.5 !important; color: var(--mspl-muted); margin-bottom: 4px !important; overflow-wrap: anywhere; }
-.w-richtext .mspl-sources__list a { color: var(--mspl-muted); }
+.w-richtext .mspl-sources__list { margin-top: 16px; }
+.w-richtext .mspl-sources__list p, .w-richtext .mspl-sources__list li { font-size: 15px !important; line-height: 1.65 !important; color: var(--mspl-ink); margin: 0 0 12px !important; overflow-wrap: anywhere; }
+.w-richtext .mspl-sources__list ul, .w-richtext .mspl-sources__list ol { margin: 0 !important; padding-left: 22px !important; }
+.w-richtext .mspl-sources__list li { padding-left: 6px; }
+.w-richtext .mspl-sources__list li + li { border-top: 1px solid var(--mspl-rule); padding-top: 12px; }
+.w-richtext .mspl-sources__list > :last-child, .w-richtext .mspl-sources__list li:last-child { margin-bottom: 0 !important; }
+.w-richtext .mspl-sources__list a { color: var(--mspl-accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 
 /* Empty optional CMS embeds otherwise each consume a flex gap above the author box. */
 .blog-details-content > .w-embed:empty { display: none; }
@@ -488,8 +504,10 @@
   .w-richtext p.mspl-lede { font-size: 17.5px !important; }
   .w-richtext .tldr-card { flex-direction: column; gap: 8px; }   /* the pill above the summary on a phone */
   .w-richtext .tldr-card p { font-size: 15.5px !important; }
-  .w-richtext .mspl-toc { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 10px 0; }   /* one swipeable row */
-  .w-richtext .mspl-toc::-webkit-scrollbar { display: none; }
+  .w-richtext .mspl-toc { padding: 12px 0 6px; }
+  .w-richtext .mspl-toc__links { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }   /* title stays visible above the swipeable links */
+  .w-richtext .mspl-toc__links::-webkit-scrollbar { display: none; }
+  .w-richtext .mspl-sources { padding: 18px; }
   .w-richtext .mspl-ig { padding: 14px; border-radius: 12px; }
   .w-richtext .mspl-ig--ladder { margin: 12px 0 24px; padding: 0; }
   .w-richtext .mspl-ig--ladder .mspl-ig__card { grid-template-columns: 44px 1fr; padding: 14px 0; }

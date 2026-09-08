@@ -36,7 +36,7 @@ TL;DR card and the offer card from plain markup and why the per-post embed of v3
 
 - **Accent**: the site's own Webflow variable `--primary-1` (`blog-layout.css` reads it: `--mspl-accent: var(--primary-1, #e33b40)`);
   a site without it gets the colour of its own button; the source is recorded in `data-mspl-accent` on the rich text.
-- **Brand line** under a table block: `og:site_name` + the page host.
+- **Brand line** under a table block: `og:site_name` (no website URL).
 - **TL;DR / offer cards**: rebuilt when their wrappers are gone, on a post the pipeline wrote (a kept `data-mspl-label`), never on an older post.
 
 ## The knob (`window.MSPL_LAYOUT`, optional, set BEFORE the script)
@@ -62,6 +62,7 @@ and a new paste.
 
 ## Versions
 
+- `3.2.0-rc.4` (2026-09-08, candidate branch only) - “In short” summary label; visible “What we're covering:” title; fixed-colour CTA buttons lift slightly on hover without underlining; readable, initially expanded Sources panel. Native author content comes from each site's selected CMS author record.
 - `3.2.0-rc.3` (2026-09-08, candidate branch only) - empty optional CMS embeds no longer create blank space before the native author box.
 - `3.2.0-rc.2` (2026-09-08, candidate branch only) - table credits omit website URLs; offer button colours stay fixed on hover; Sources count references instead of supporting prose. Supersedes rc.1 on sandbox only.
 - `3.2.0-rc.1` (2026-09-08, candidate branch only) - explicit native content markers preserve table rows, list treatments, summary, offers and renamed FAQ sections through text edits; current-heading contents links; accessible unique FAQ IDs and mobile wrapping. Install using an immutable commit URL on the Allied Sandbox only. No stable tag: actual Webflow editor/save/publish and second-save marker survival must pass before release. `v3.1.0` remains the rollback release and the shared `@3` target.

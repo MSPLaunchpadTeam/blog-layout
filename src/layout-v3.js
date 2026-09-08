@@ -417,7 +417,15 @@
     entries = entries.slice(0, TOC_MAX);
     var nav = document.createElement('nav');
     nav.className = 'mspl-toc';
-    nav.setAttribute('aria-label', 'On this page');
+    var title = document.createElement('div');
+    title.className = 'mspl-toc__title';
+    title.textContent = "What we're covering:";
+    uniqueId(title, 'mspl-toc-title');
+    nav.setAttribute('aria-labelledby', title.id);
+    nav.appendChild(title);
+    var links = document.createElement('div');
+    links.className = 'mspl-toc__links';
+    nav.appendChild(links);
     for (var k = 0; k < entries.length; k++) {
       // the pipeline's Inject step writes a 2-4 word chip label + an icon on each body H2 (data attributes); a
       // heading without them (an older post, an editor save that dropped attributes) shows its full text instead
@@ -430,7 +438,7 @@
       if (icon) { var ic = document.createElement('span'); ic.className = 'mspl-toc__icon'; ic.setAttribute('aria-hidden', 'true'); ic.textContent = icon; a.appendChild(ic); }
       a.appendChild(document.createTextNode(label || h2.textContent));
       if (label) a.title = h2.textContent;
-      nav.appendChild(a);
+      links.appendChild(a);
     }
     // cinchops' order: summary band, then the strip, then the article - so right after the TL;DR card when there is one
     var first = root.firstElementChild;
@@ -450,6 +458,7 @@
       if ((p.textContent || '').replace(/\s+/g, ' ').trim() !== text) continue;      // the line must be the link alone
       var inner = a.querySelector('span'); var probe = inner || a;
       var deepest = probe; while (deepest.firstElementChild && deepest.firstElementChild.tagName === 'SPAN') deepest = deepest.firstElementChild;
+      if (a.closest('.offer-card') && (marked || inner || a.hasAttribute('style'))) addClass(a, 'mspl-offer-button');
       if (!isTransparent(deepest) || !isTransparent(probe) || !isTransparent(a)) continue;   // the site drew a button
       if (!marked && !inner && !a.hasAttribute('style')) continue;                         // a plain prose link
       addClass(a, 'mspl-btn');
@@ -475,13 +484,12 @@
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'mspl-sources__toggle';
-    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-expanded', 'true');
     btn.setAttribute('aria-controls', list.id);
     while (h2.firstChild) btn.appendChild(h2.firstChild);
     btn.appendChild(document.createTextNode(' (' + count + ')'));
     h2.appendChild(btn);
     wrap.appendChild(h2);
-    list.setAttribute('hidden', '');
     wrap.appendChild(list);
     btn.addEventListener('click', function () {
       var open = btn.getAttribute('aria-expanded') === 'true';
