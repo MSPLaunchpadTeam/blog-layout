@@ -394,7 +394,8 @@
       for (k = 0; k < items.length; k++) {
         var li = items[k];
         addClass(li, 'mspl-ig__card');
-        var strong = leadingStrong(li);
+        // Normal bullets keep inline emphasis, even when it starts the item.
+        var strong = kind === 'rows' ? null : leadingStrong(li);
         if (strong) addClass(strong, 'mspl-ig__label');
         if (hasBlockChild(li)) continue;
         var detail = document.createElement('span');
