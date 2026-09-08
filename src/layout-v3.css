@@ -430,6 +430,7 @@
 
 /* 9. FAQ accordion: the question stays an H3 at question-row size, brand chevron -------------------------------- */
 .w-richtext .mspl-faq__item { border-bottom: 1px solid var(--mspl-rule); }
+.w-richtext .mspl-faq__item--last { border-bottom: 0; }
 .w-richtext .mspl-faq__item:first-of-type { border-top: 1px solid var(--mspl-rule); }
 .w-richtext .mspl-faq__item h3 { font-size: 17px !important; line-height: 1.4 !important; margin: 0 !important; }
 .w-richtext .mspl-faq__q { padding: 16px 48px 16px 0; font-weight: 600; color: var(--mspl-ink); }
@@ -456,13 +457,12 @@
 .w-richtext .mspl-sources__toggle[aria-expanded="true"]::after { content: " \25B4"; }
 .w-richtext .mspl-sources__list { margin-top: 16px; }
 .w-richtext .mspl-sources__list p, .w-richtext .mspl-sources__list li { font-size: 15px !important; line-height: 1.65 !important; color: var(--mspl-ink); margin: 0 0 12px !important; overflow-wrap: anywhere; }
-.w-richtext .mspl-sources__list ul, .w-richtext .mspl-sources__list ol { margin: 0 !important; padding: 0 !important; list-style: none !important; }
-.w-richtext .mspl-sources__list li { list-style: none !important; padding: 12px 0 !important; margin: 0 !important; }
-.w-richtext .mspl-sources__list li + li { border-top: 1px solid var(--mspl-rule); }
+.w-richtext .mspl-sources__list ul, .w-richtext .mspl-sources__list ol { display: block; margin: 0 !important; padding: 0 0 0 22px !important; list-style-type: disc !important; }
+.w-richtext .mspl-sources__list li { display: list-item; list-style-type: disc !important; padding: 0 !important; margin: 0 0 12px !important; border: 0 !important; }
 .w-richtext .mspl-sources__list li::before, .w-richtext .mspl-sources__list li::after, .w-richtext .mspl-sources__list a::before, .w-richtext .mspl-sources__list a::after { content: none !important; display: none !important; }
 .w-richtext .mspl-sources__list > :last-child, .w-richtext .mspl-sources__list li:last-child { margin-bottom: 0 !important; }
-.w-richtext .mspl-sources__list a { display: inline; font-size: 15px !important; line-height: 1.65 !important; color: var(--mspl-ink-2); font-weight: 500 !important; text-decoration: underline; text-decoration-color: var(--mspl-rule); text-underline-offset: 4px; overflow-wrap: anywhere; }
-.w-richtext .mspl-sources__list a:hover { color: var(--mspl-accent); text-decoration-color: currentColor; }
+.w-richtext .mspl-sources__list a { display: inline; font-size: 15px !important; line-height: 1.65 !important; color: var(--mspl-ink-2); font-weight: 500 !important; text-decoration: none !important; text-decoration-line: none !important; border-bottom: 0 !important; overflow-wrap: anywhere; }
+.w-richtext .mspl-sources__list a:hover { color: var(--mspl-accent); }
 
 /* Empty optional CMS embeds otherwise each consume a flex gap above the author box. */
 .blog-details-content > .w-embed:empty { display: none; }

@@ -641,6 +641,8 @@
     stats.toc = buildToc(root);
     stats.buttons = buttonFallback(root);
     collapseSources(root);
+    var faqItems = root.querySelectorAll('.mspl-faq__item');
+    if (faqItems.length) addClass(faqItems[faqItems.length - 1], 'mspl-faq__item--last');
     stats.tldr = rebuilt.tldr;
     stats.offer = rebuilt.offer;
     stats.accent = accent;
