@@ -24,7 +24,7 @@
   function findFaqHeading(root) {
     var h2s = root.querySelectorAll('h2');
     for (var i = 0; i < h2s.length; i++) {
-      if (FAQ_RE.test(h2s[i].textContent || '')) return h2s[i];
+      if (h2s[i].getAttribute('data-mspl-role') === 'faq' || FAQ_RE.test(h2s[i].textContent || '')) return h2s[i];
     }
     return null;
   }
@@ -38,8 +38,17 @@
     while (node && node.tagName !== 'H2') {
       var next = node.nextElementSibling;
       if (node.tagName === 'H3') {
+        // Empty questions are plain headings; never create a control with nothing useful to reveal.
+        var probe = next, hasAnswer = false;
+        while (probe && probe.tagName !== 'H2' && probe.tagName !== 'H3') {
+          if ((probe.textContent || '').trim() || probe.querySelector('img,video,iframe')) hasAnswer = true;
+          probe = probe.nextElementSibling;
+        }
+        if (!hasAnswer || !(node.textContent || '').trim()) { node = next; continue; }
         n++;
         var id = 'mspl-faq-' + n + (node.id ? '-' + node.id : '');
+        var baseId = id, suffix = 1;
+        while (document.getElementById(id)) id = baseId + '-' + suffix++;
         var item = document.createElement('div');
         item.className = 'mspl-faq__item';
         node.parentNode.insertBefore(item, node);
@@ -73,7 +82,7 @@
 
   function init() {
     var roots = document.querySelectorAll('.w-richtext');
-    for (var i = 0; i < roots.length; i++) build(roots[i]);
+    for (var i = 0; i < roots.length; i++) if (!roots[i].closest('.mspl-author')) build(roots[i]);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

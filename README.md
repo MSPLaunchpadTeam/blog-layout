@@ -62,5 +62,6 @@ and a new paste.
 
 ## Versions
 
+- `3.2.0-rc.1` (2026-09-08, candidate branch only) - explicit native content markers preserve table rows, list treatments, summary, offers and renamed FAQ sections through text edits; current-heading contents links; accessible unique FAQ IDs and mobile wrapping. Install using an immutable commit URL on the Allied Sandbox only. No stable tag: actual Webflow editor/save/publish and second-save marker survival must pass before release. `v3.1.0` remains the rollback release and the shared `@3` target.
 - `v3.1.0` (2026-09-07) - editor-proof: the TL;DR + offer cards rebuilt from plain markup after a Designer save; accent = the site's `--primary-1` (button-colour fallback); loaded from the template on the `@3` range.
 - `v3.0.0` (2026-09-07) - layout v3 after review round 6g (approved by Thanh 2026-09-07) + the FAQ accordion; per-post embed (retired).
