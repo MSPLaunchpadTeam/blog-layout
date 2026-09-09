@@ -73,7 +73,7 @@
   -webkit-box-decoration-break: clone;
 }
 
-/* the callout: the closing paragraph of a 3+ paragraph run, lifted out of the wall (cinchops' Key Insight card) */
+/* Only explicitly marked takeaways become callouts. */
 .w-richtext p.mspl-callout {
   background: var(--mspl-card);
   border: 1px solid var(--mspl-rule);
@@ -508,8 +508,7 @@
   .w-richtext .tldr-card { flex-direction: column; gap: 8px; }   /* the pill above the summary on a phone */
   .w-richtext .tldr-card p { font-size: 15.5px !important; }
   .w-richtext .mspl-toc { padding: 12px 0 6px; }
-  .w-richtext .mspl-toc__links { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }   /* title stays visible above the swipeable links */
-  .w-richtext .mspl-toc__links::-webkit-scrollbar { display: none; }
+  .w-richtext .mspl-toc__links { flex-direction: column; align-items: stretch; overflow: visible; }
   .w-richtext .mspl-sources { padding: 18px; }
   .w-richtext .mspl-ig { padding: 14px; border-radius: 12px; }
   .w-richtext .mspl-ig--ladder { margin: 12px 0 24px; padding: 0; }
@@ -552,3 +551,41 @@
 .w-richtext .mspl-ig--bullets .mspl-ig__card::before { left: 0; top: 18px; width: 20px; height: 20px; border-radius: var(--mspl-icon-radius, 6px); background: var(--mspl-accent-soft); box-shadow: none; }
 .w-richtext .mspl-ig--bullets .mspl-ig__card::after { left: 7px; top: 22px; width: 5px; height: 9px; border-width: 2px; border-color: var(--mspl-accent); }
 .w-richtext .mspl-ig--bullets .mspl-ig__detail { font-size: 16px !important; line-height: 1.65 !important; }
+
+/* rc.10: UI controls are deliberately separate from article prose styling. */
+.w-richtext .mspl-toc [hidden], .mspl-author [hidden] { display: none !important; }
+.w-richtext ul.mspl-toc__links { flex-direction: row; list-style: none; padding: 0; margin: 0; }
+.w-richtext .mspl-toc__links > li { display: block; flex: none; padding: 0; margin: 0 !important; list-style: none !important; }
+.w-richtext .mspl-toc__links > li::before { content: none !important; }
+.w-richtext .mspl-toc__toggle, .mspl-author__toggle { background: transparent; border: 0; color: var(--mspl-ink, #111827); cursor: pointer; font: inherit; font-size: 16px; font-weight: 700; padding: 10px 0; min-height: 44px; text-align: left; }
+.w-richtext .mspl-toc__toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.w-richtext .mspl-toc__toggle::after { content: '+'; font-size: 24px; font-weight: 400; }
+.w-richtext .mspl-toc__toggle[aria-expanded=true]::after { content: '−'; }
+.mspl-author__excerpt p { font-size: 15px !important; line-height: 1.6 !important; margin: 0 0 8px !important; color: var(--mspl-ink-2, #374151); }
+.mspl-author__toggle { display: block; color: var(--mspl-accent, #c42c32); font-size: 14px; padding: 6px 0; }
+.mspl-author__toggle:focus-visible, .mspl-toc__toggle:focus-visible, .mspl-toc a:focus-visible { outline: 2px solid var(--mspl-accent, #c42c32); outline-offset: 3px; }
+.w-richtext figure.mspl-infographic > div { position: relative; }
+.w-richtext .mspl-zoom__open { position: absolute; inset: 0; display: block; width: 100%; height: 100%; min-height: 44px; background: transparent; border: 0; border-radius: inherit; padding: 0; cursor: zoom-in; }
+.w-richtext .mspl-zoom__open::after { content: '+'; position: absolute; right: 8px; bottom: 8px; width: 30px; height: 30px; display: grid; place-items: center; color: white; background: #252525; border: 1px solid white; font: 24px/1 Arial, sans-serif; border-radius: 50%; }
+.w-richtext .mspl-zoom__open:focus-visible { outline: 3px solid var(--mspl-accent, #c42c32); outline-offset: -4px; }
+.mspl-zoom { position: fixed; inset: 0; box-sizing: border-box; width: min(1100px, 96vw); height: 90vh; height: 90dvh; max-width: 96vw; max-height: 94dvh; padding: 12px; margin: auto; border: 1px solid #aaa; background: #fff; color: #111; overflow: hidden; z-index: 2147483647; }
+.mspl-zoom:not([open]) { display: none; }
+.mspl-zoom[open] { display: flex; flex-direction: column; gap: 10px; }
+.mspl-zoom::backdrop { background: rgb(0 0 0 / .75); }
+.mspl-zoom__toolbar { display: flex; flex-wrap: wrap; gap: 8px; flex-shrink: 0; }
+.mspl-zoom__toolbar button, .mspl-zoom__toolbar a { min-height: 44px; padding: 9px 12px; border: 1px solid #999; border-radius: 0; background: #fff; color: #111; text-decoration: none; font: 600 14px/24px Arial, sans-serif; cursor: pointer; }
+.mspl-zoom__toolbar .mspl-zoom__close { margin-left: auto; background: #222; color: #fff; }
+.mspl-zoom :focus-visible { outline: 3px solid #1670b9; outline-offset: 1px; }
+.mspl-zoom__viewport { overflow: auto; min-height: 0; min-width: 0; flex: 1; overscroll-behavior: contain; }
+.mspl-zoom[data-size=actual] .mspl-zoom__viewport { cursor: grab; }
+.mspl-zoom[data-size=actual] .mspl-zoom__viewport:active { cursor: grabbing; }
+.mspl-zoom__toolbar [aria-pressed=true] { border-color: #111; box-shadow: inset 0 -2px #111; }
+.mspl-zoom__viewport img { display: block; height: auto; max-width: none; margin: 0 auto; }
+.mspl-zoom[data-size=fit] .mspl-zoom__viewport img { width: 100%; max-width: 100%; }
+@media (max-width: 767px) {
+  .w-richtext ul.mspl-toc__links { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding-bottom: 8px; }
+  .w-richtext .mspl-toc__links a { display: flex; white-space: normal; min-height: 44px; padding: 10px 0; overflow-wrap: anywhere; }
+  .mspl-zoom { width: 96vw; padding: 8px; }
+  .mspl-zoom__toolbar { gap: 5px; }
+  .mspl-zoom__toolbar button, .mspl-zoom__toolbar a { padding: 8px; font-size: 13px; }
+}

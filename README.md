@@ -62,6 +62,7 @@ and a new paste.
 
 ## Versions
 
+- `3.2.0-rc.10` (2026-09-09, candidate branch only) - PNG enlargement dialog with fit/actual size, panning and keyboard controls; collapsed mobile contents list; explicit `data-mspl-role="callout"` paragraphs only; expandable first-sentence CMS author biography. Native bold remains as authored; no automatic percentage/currency highlighting. Immutable commit pin on sandbox only; rc.9 remains rollback and stable `@3` is unchanged.
 - `3.2.0-rc.6` (2026-09-08, candidate branch only) - Sources use ordinary bullets without underlines or row dividers, while retaining the card border and closed default. Only the final FAQ item's bottom divider is removed.
 - `3.2.0-rc.5` (2026-09-08, candidate branch only) - blog corners follow native site buttons; centred stacked CTA; clean Sources typography with closed default; list introductions stay plain and only ordered steps get connected rails. Images require matching artwork from the generation pipeline.
 - `3.2.0-rc.4` (2026-09-08, candidate branch only) - “In short” summary label; visible “What we're covering:” title; fixed-colour CTA buttons lift slightly on hover without underlining; readable, initially expanded Sources panel. Native author content comes from each site's selected CMS author record.
