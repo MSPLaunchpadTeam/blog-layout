@@ -70,6 +70,14 @@ documented in EA `RC13-RELEASE.md`. New main artwork is pending separate paid-ca
 approval; existing thumbnails and body images remain unchanged. Rollback is the
 rc.12 asset pair at `571fae9750ccf109b8b4d8f448ccabac4aaa3985`, without Refokus.
 
+Sandbox rc.13 is published at **`c9f9e5e9ce73f670174f64afbae34c30223e62d7`**.
+Both immutable CDN assets are byte-identical to the generated files. Edge saved-code
+reopen/publication and two-post1440/390/320 screenshots pass; no overflow, correct
+body typography and preserved callouts, CTA, contents, FAQ and image enlargement.
+EA validation:343Node +231offlinePython tests; all63staged/55liveCMSrecords preserve
+fields except the three approved Cybersecurity formatting edits. Main-image
+generation remains pending separate paid approval. No stable tag was created.
+
 rc.12 includes the class-token conversion used by the sandbox. Install an immutable
 commit URL for both assets, then remove only its Refokus rich-text-enhancer script.
 Do not apply that removal to stable `@3`: its v3.1.0 bundle still needs Refokus.
