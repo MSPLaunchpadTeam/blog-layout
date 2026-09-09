@@ -62,6 +62,14 @@ and a new paste.
 
 ## Sandbox candidates
 
+rc.13 matches section-opening paragraph colour to ordinary body copy and displays
+the main image at intrinsic proportions. It retains rc.12 token conversion and
+all FAQ/layout interactions. Use immutable candidate URLs only; no stable tag.
+The generation pipeline's 1200×630 JPEG contract and the two article repairs are
+documented in EA `RC13-RELEASE.md`. New main artwork is pending separate paid-call
+approval; existing thumbnails and body images remain unchanged. Rollback is the
+rc.12 asset pair at `571fae9750ccf109b8b4d8f448ccabac4aaa3985`, without Refokus.
+
 rc.12 includes the class-token conversion used by the sandbox. Install an immutable
 commit URL for both assets, then remove only its Refokus rich-text-enhancer script.
 Do not apply that removal to stable `@3`: its v3.1.0 bundle still needs Refokus.
@@ -82,6 +90,8 @@ existing hidden Sources panels remain unchanged. Rollback is rc.11 at
 `<script src="https://tools.refokus.com/rich-text-enhancer/bundle.v1.0.0.js"></script>`.
 
 ## Versions
+
+- `3.2.0-rc.13` (2026-09-09, candidate branch only) - section-opening paragraphs match body typography; hero keeps intrinsic image proportions. No stable `@3` promotion.
 
 - `3.2.0-rc.12` (2026-09-09, candidate branch only) - owned paired class-token conversion before FAQ/layout, including legacy nested button/icon classes. Preserves existing elements and handlers, no duplicate spans or Webflow/IX2 resets. Immutable sandbox candidate only; rc.11 plus Refokus is rollback. No CSS behavior changes or stable `@3` promotion.
 - `3.2.0-rc.11` (2026-09-09, candidate branch only) - approved localhost presentation: full CMS biography and author-story link, body-sized section introductions, narrower table number/H3 columns, white deliberate callouts outside CTA sections, and responsive suppression of bold in single-line bullets using less than 70% of text width. Original bullet layout and accessible contents/FAQ/enlargement retained; zoom supports AVIF infographic delivery. Sandbox immutable commit only; rc.10 remains rollback and stable `@3` is unchanged.

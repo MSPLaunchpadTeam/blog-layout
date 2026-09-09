@@ -7,7 +7,7 @@
   --mspl-accent: var(--primary-1, #e33b40);   /* the site's OWN brand primary (the Webflow variable every MSPL template site defines on :root; v3.1, Thanh 2026-09-07: "pick up the color from the current site"); the sandbox red when a site has none, and layout-v3.js sets it from the site's button colour as a second fallback */
   --mspl-accent-tint: color-mix(in srgb, var(--mspl-accent) 22%, transparent);   /* the highlighter under stat sentences */
   --mspl-dark: #1b1f2a;            /* the CTA banner */
-  --mspl-ink: #16181d;             /* headings, ledes */
+  --mspl-ink: #16181d;             /* headings and callouts */
   --mspl-ink-2: #3a3d44;           /* body copy */
   --mspl-muted: #6b7280;
   --mspl-rule: #e6e2db;            /* hairlines */
@@ -37,6 +37,7 @@
 .w-richtext [id] { scroll-margin-top: 110px; }   /* the sticky header */
 .mspl-post-meta { max-width: var(--mspl-measure); margin: 4px 0 16px; font-size: 14px; color: var(--mspl-muted); }
 .mspl-post-meta__sep { margin: 0 4px; }
+.blog-template-image { height: auto !important; max-height: none !important; object-fit: contain !important; }
 
 /* 2. Type + rhythm --------------------------------------------------------------------------------------------- */
 .w-richtext p {
@@ -61,7 +62,7 @@
 .w-richtext :is(p, li, blockquote) a:not(.mspl-btn):not(.mspl-offer-button) { font-size: inherit !important; line-height: inherit !important; }
 
 /* Section openings use body size and line height; importance belongs to editable inline strong tags. */
-.w-richtext p.mspl-lede { font-size: var(--mspl-body) !important; line-height: var(--mspl-lh) !important; font-weight: 400 !important; color: var(--mspl-ink); margin-bottom: 16px !important; }
+.w-richtext p.mspl-lede { font-size: var(--mspl-body) !important; line-height: var(--mspl-lh) !important; font-weight: 400 !important; color: var(--mspl-ink-2); margin-bottom: 16px !important; }
 .w-richtext :is(p, li) :is(strong, b) { font-size: inherit !important; line-height: inherit !important; font-weight: 700; }
 
 /* the stat sentence: one per section, a marker-pen tint under ink text (a whole sentence in brand red shouts) */
