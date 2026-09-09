@@ -8,8 +8,8 @@ Blog Posts template page of each site.
 | File | What |
 |---|---|
 | `blog-layout.css` | `src/faq-accordion.css` + `src/layout-v3.css`, in that order (generated, do not hand-edit) |
-| `blog-layout.js` | `src/faq-accordion.js` + `src/layout-v3.js`, in that order (generated, do not hand-edit) |
-| `src/` | the four source files as reviewed on localhost (copies of the EA repo's `projects/blog-infographics/preview/assets/`) |
+| `blog-layout.js` | `src/tokens.js` + `src/faq-accordion.js` + `src/layout-v3.js`, in that order (generated, do not hand-edit) |
+| `src/` | the five source files as reviewed on localhost (copies of the EA repo's `projects/blog-infographics/preview/assets/`) |
 
 Source of truth for edits: the EA repo, `projects/blog-infographics/preview/assets/`. Rebuild with
 `node projects/blog-infographics/webflow/build_layout_bundle.mjs --out <this clone>`; `test/bundle.test.mjs` there guards the
@@ -52,7 +52,7 @@ override, if a site's `--primary-1` is not the colour wanted: one line before th
 ## Release recipe (the team edits ONE place)
 
 1. Edit the sources in the EA repo (`preview/assets/`), run the tests there (`node --test "projects/blog-infographics/test/*.test.mjs"`), look at the localhost preview.
-2. Bump `VERSION` in `projects/blog-infographics/webflow/build_layout_bundle.mjs`, run it (dist + paste), then `--out <this clone>` and copy the four sources into `src/`.
+2. Bump `VERSION` in `projects/blog-infographics/webflow/build_layout_bundle.mjs`, run it (dist + paste), then `--out <this clone>` and copy the five sources into `src/`.
 3. Commit, tag `v<VERSION>`, `git push && git push --tags`.
 4. Check `https://cdn.jsdelivr.net/gh/MSPLaunchpadTeam/blog-layout@3/blog-layout.js` serves the new first line (the range re-resolves within hours; the exact tag URL is immediate).
 
@@ -60,8 +60,17 @@ jsDelivr caches an exact tag permanently: never move or delete a published tag; 
 backward-compatible (same markup contract) because every site on `@3` picks it up without a re-paste; a breaking change is a `v4`
 and a new paste.
 
+## Sandbox candidates
+
+rc.12 includes the class-token conversion used by the sandbox. Install an immutable
+commit URL for both assets, then remove only its Refokus rich-text-enhancer script.
+Do not apply that removal to stable `@3`: its v3.1.0 bundle still needs Refokus.
+Candidates are branch commits, with no stable tag push. Retain the complete prior
+footer code (rc.11 assets plus Refokus) for rollback. See EA `RC12-RELEASE.md`.
+
 ## Versions
 
+- `3.2.0-rc.12` (2026-09-09, candidate branch only) - owned paired class-token conversion before FAQ/layout, including legacy nested button/icon classes. Preserves existing elements and handlers, no duplicate spans or Webflow/IX2 resets. Immutable sandbox candidate only; rc.11 plus Refokus is rollback. No CSS behavior changes or stable `@3` promotion.
 - `3.2.0-rc.11` (2026-09-09, candidate branch only) - approved localhost presentation: full CMS biography and author-story link, body-sized section introductions, narrower table number/H3 columns, white deliberate callouts outside CTA sections, and responsive suppression of bold in single-line bullets using less than 70% of text width. Original bullet layout and accessible contents/FAQ/enlargement retained; zoom supports AVIF infographic delivery. Sandbox immutable commit only; rc.10 remains rollback and stable `@3` is unchanged.
 - `3.2.0-rc.10` (2026-09-09, candidate branch only) - PNG enlargement dialog with fit/actual size, panning and keyboard controls; collapsed mobile contents list; explicit `data-mspl-role="callout"` paragraphs only; expandable first-sentence CMS author biography. Native bold remains as authored; no automatic percentage/currency highlighting. Immutable commit pin on sandbox only; rc.9 remains rollback and stable `@3` is unchanged.
 - `3.2.0-rc.6` (2026-09-08, candidate branch only) - Sources use ordinary bullets without underlines or row dividers, while retaining the card border and closed default. Only the final FAQ item's bottom divider is removed.
