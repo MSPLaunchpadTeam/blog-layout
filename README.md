@@ -68,6 +68,19 @@ Do not apply that removal to stable `@3`: its v3.1.0 bundle still needs Refokus.
 Candidates are branch commits, with no stable tag push. Retain the complete prior
 footer code (rc.11 assets plus Refokus) for rollback. See EA `RC12-RELEASE.md`.
 
+Sandbox rc.12 is staging-published at immutable asset commit
+`571fae9750ccf109b8b4d8f448ccabac4aaa3985`; both CDN files are byte-verified.
+Read-only audit covers 63 staged CMS records (9 drafts), 55 live records and all
+55 public pages. Only class tokens occur; 118 body comparisons match actual
+Refokus output exactly. 333 Node and 227 offline Python checks pass. Saved template
+settings and published article/image/unrelated-script preservation pass.
+Actual 1440/390/320 screenshots and CTA, FAQ, contents, image zoom and native menu
+checks are recorded in EA `RC12-RELEASE.md`, with screenshots under
+`preview/out/shots/rc12/`. MSP Company's pre-existing mobile overflow and the
+existing hidden Sources panels remain unchanged. Rollback is rc.11 at
+`9a3b81f01befcc426210d972affe579178758774` plus
+`<script src="https://tools.refokus.com/rich-text-enhancer/bundle.v1.0.0.js"></script>`.
+
 ## Versions
 
 - `3.2.0-rc.12` (2026-09-09, candidate branch only) - owned paired class-token conversion before FAQ/layout, including legacy nested button/icon classes. Preserves existing elements and handlers, no duplicate spans or Webflow/IX2 resets. Immutable sandbox candidate only; rc.11 plus Refokus is rollback. No CSS behavior changes or stable `@3` promotion.
