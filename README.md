@@ -66,17 +66,21 @@ rc.13 matches section-opening paragraph colour to ordinary body copy and display
 the main image at intrinsic proportions. It retains rc.12 token conversion and
 all FAQ/layout interactions. Use immutable candidate URLs only; no stable tag.
 The generation pipeline's 1200×630 JPEG contract and the two article repairs are
-documented in EA `RC13-RELEASE.md`. New main artwork is pending separate paid-call
-approval; existing thumbnails and body images remain unchanged. Rollback is the
+documented in EA `RC13-RELEASE.md`. Both approved1200×630JPEG main-image replacements
+are published; thumbnails and body images remain unchanged. Rollback is the
 rc.12 asset pair at `571fae9750ccf109b8b4d8f448ccabac4aaa3985`, without Refokus.
 
 Sandbox rc.13 is published at **`c9f9e5e9ce73f670174f64afbae34c30223e62d7`**.
 Both immutable CDN assets are byte-identical to the generated files. Edge saved-code
 reopen/publication and two-post1440/390/320 screenshots pass; no overflow, correct
 body typography and preserved callouts, CTA, contents, FAQ and image enlargement.
-EA validation:343Node +231offlinePython tests; all63staged/55liveCMSrecords preserve
-fields except the three approved Cybersecurity formatting edits. Main-image
-generation remains pending separate paid approval. No stable tag was created.
+EA validation:343Node +235offlinePython tests; all63staged/55liveCMSrecords preserve
+fields except the three approved Cybersecurity formatting edits and two main-image
+references. Two approved KIE calls consumed24credits, with no retries or n8n
+execution. Exact title/logo and photographic-scene review passed; canonical Webflow
+JPEG copies match approved bytes and hero/OG URLs match. Main-image alt text is
+preserved. See EA `preview/review-next/rc13-main-images-result.json` for results and
+`preview/out/shots/rc13-main-images/` for1440/390/320screenshots. No stable tag was created.
 
 rc.12 includes the class-token conversion used by the sandbox. Install an immutable
 commit URL for both assets, then remove only its Refokus rich-text-enhancer script.
