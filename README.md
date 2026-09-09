@@ -62,6 +62,7 @@ and a new paste.
 
 ## Versions
 
+- `3.2.0-rc.11` (2026-09-09, candidate branch only) - approved localhost presentation: full CMS biography and author-story link, body-sized section introductions, narrower table number/H3 columns, white deliberate callouts outside CTA sections, and responsive suppression of bold in single-line bullets using less than 70% of text width. Original bullet layout and accessible contents/FAQ/enlargement retained; zoom supports AVIF infographic delivery. Sandbox immutable commit only; rc.10 remains rollback and stable `@3` is unchanged.
 - `3.2.0-rc.10` (2026-09-09, candidate branch only) - PNG enlargement dialog with fit/actual size, panning and keyboard controls; collapsed mobile contents list; explicit `data-mspl-role="callout"` paragraphs only; expandable first-sentence CMS author biography. Native bold remains as authored; no automatic percentage/currency highlighting. Immutable commit pin on sandbox only; rc.9 remains rollback and stable `@3` is unchanged.
 - `3.2.0-rc.6` (2026-09-08, candidate branch only) - Sources use ordinary bullets without underlines or row dividers, while retaining the card border and closed default. Only the final FAQ item's bottom divider is removed.
 - `3.2.0-rc.5` (2026-09-08, candidate branch only) - blog corners follow native site buttons; centred stacked CTA; clean Sources typography with closed default; list introductions stay plain and only ordered steps get connected rails. Images require matching artwork from the generation pipeline.

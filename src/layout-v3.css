@@ -60,8 +60,8 @@
 /* Inline links follow their sentence, including smaller table/FAQ text and responsive ledes. */
 .w-richtext :is(p, li, blockquote) a:not(.mspl-btn):not(.mspl-offer-button) { font-size: inherit !important; line-height: inherit !important; }
 
-/* Section openings keep the small size lift; importance belongs to editable inline strong tags. */
-.w-richtext p.mspl-lede { font-size: calc(var(--mspl-body) + 0.5px) !important; line-height: 1.6 !important; font-weight: 400 !important; color: var(--mspl-ink); margin-bottom: 16px !important; }
+/* Section openings use body size and line height; importance belongs to editable inline strong tags. */
+.w-richtext p.mspl-lede { font-size: var(--mspl-body) !important; line-height: var(--mspl-lh) !important; font-weight: 400 !important; color: var(--mspl-ink); margin-bottom: 16px !important; }
 .w-richtext :is(p, li) :is(strong, b) { font-size: inherit !important; line-height: inherit !important; font-weight: 700; }
 
 /* the stat sentence: one per section, a marker-pen tint under ink text (a whole sentence in brand red shouts) */
@@ -75,7 +75,7 @@
 
 /* Only explicitly marked takeaways become callouts. */
 .w-richtext p.mspl-callout {
-  background: var(--mspl-card);
+  background: #fff !important;
   border: 1px solid var(--mspl-rule);
   border-left: 4px solid var(--mspl-accent);
   border-radius: 0 10px 10px 0;
@@ -329,8 +329,8 @@
 .w-richtext .mspl-ig--table .mspl-ig__grid { display: block; }
 .w-richtext .mspl-ig--table .mspl-ig__card {
   display: grid;
-  grid-template-columns: 30px minmax(170px, 27%) 1fr;
-  column-gap: 16px;
+  grid-template-columns: 19px minmax(120px, 19%) minmax(0, 1fr);
+  column-gap: 11px;
   align-items: start;
   padding: 13px 18px 13px 16px;
   border-bottom: 1px solid var(--mspl-rule);
@@ -524,7 +524,7 @@
   .w-richtext .mspl-ig--tiles .mspl-ig__label { padding-top: 6px; }
   .w-richtext .mspl-ig__footer { font-size: 12px !important; }
   .w-richtext .mspl-ig--table { padding: 0; border-radius: 0; }
-  .w-richtext .mspl-ig--table .mspl-ig__card { grid-template-columns: 26px 1fr; column-gap: 10px; padding: 12px; }   /* label above detail, both beside the numeral */
+  .w-richtext .mspl-ig--table .mspl-ig__card { grid-template-columns: 18px minmax(0, 1fr); column-gap: 7px; padding: 12px; }   /* label above detail, both beside the narrower numeral */
   .w-richtext .mspl-ig--table .mspl-ig__card h3, .w-richtext .mspl-ig--table .mspl-ig__label { grid-column: 2; }
   .w-richtext .mspl-ig--table .mspl-ig__card p, .w-richtext .mspl-ig--table .mspl-ig__detail { grid-column: 2; margin-top: 4px !important; }
   .w-richtext .mspl-ig--table .mspl-ig__body { grid-column: 2; margin-top: 4px; }
@@ -551,19 +551,19 @@
 .w-richtext .mspl-ig--bullets .mspl-ig__card::before { left: 0; top: 18px; width: 20px; height: 20px; border-radius: var(--mspl-icon-radius, 6px); background: var(--mspl-accent-soft); box-shadow: none; }
 .w-richtext .mspl-ig--bullets .mspl-ig__card::after { left: 7px; top: 22px; width: 5px; height: 9px; border-width: 2px; border-color: var(--mspl-accent); }
 .w-richtext .mspl-ig--bullets .mspl-ig__detail { font-size: 16px !important; line-height: 1.65 !important; }
+/* Under 70% of one available text line: regular weight for display and stable measurement. */
+.w-richtext .mspl-ig--bullets :is(.mspl-bullet-measure, .mspl-bullet-plain) :is(strong, b) { font-weight: 400 !important; }
 
 /* rc.10: UI controls are deliberately separate from article prose styling. */
 .w-richtext .mspl-toc [hidden], .mspl-author [hidden] { display: none !important; }
 .w-richtext ul.mspl-toc__links { flex-direction: row; list-style: none; padding: 0; margin: 0; }
 .w-richtext .mspl-toc__links > li { display: block; flex: none; padding: 0; margin: 0 !important; list-style: none !important; }
 .w-richtext .mspl-toc__links > li::before { content: none !important; }
-.w-richtext .mspl-toc__toggle, .mspl-author__toggle { background: transparent; border: 0; color: var(--mspl-ink, #111827); cursor: pointer; font: inherit; font-size: 16px; font-weight: 700; padding: 10px 0; min-height: 44px; text-align: left; }
+.w-richtext .mspl-toc__toggle { background: transparent; border: 0; color: var(--mspl-ink, #111827); cursor: pointer; font: inherit; font-size: 16px; font-weight: 700; padding: 10px 0; min-height: 44px; text-align: left; }
 .w-richtext .mspl-toc__toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .w-richtext .mspl-toc__toggle::after { content: '+'; font-size: 24px; font-weight: 400; }
 .w-richtext .mspl-toc__toggle[aria-expanded=true]::after { content: '−'; }
-.mspl-author__excerpt p { font-size: 15px !important; line-height: 1.6 !important; margin: 0 0 8px !important; color: var(--mspl-ink-2, #374151); }
-.mspl-author__toggle { display: block; color: var(--mspl-accent, #c42c32); font-size: 14px; padding: 6px 0; }
-.mspl-author__toggle:focus-visible, .mspl-toc__toggle:focus-visible, .mspl-toc a:focus-visible { outline: 2px solid var(--mspl-accent, #c42c32); outline-offset: 3px; }
+.mspl-toc__toggle:focus-visible, .mspl-toc a:focus-visible { outline: 2px solid var(--mspl-accent, #c42c32); outline-offset: 3px; }
 .w-richtext figure.mspl-infographic > div { position: relative; }
 .w-richtext .mspl-zoom__open { position: absolute; inset: 0; display: block; width: 100%; height: 100%; min-height: 44px; background: transparent; border: 0; border-radius: inherit; padding: 0; cursor: zoom-in; }
 .w-richtext .mspl-zoom__open::after { content: '+'; position: absolute; right: 8px; bottom: 8px; width: 30px; height: 30px; display: grid; place-items: center; color: white; background: #252525; border: 1px solid white; font: 24px/1 Arial, sans-serif; border-radius: 50%; }

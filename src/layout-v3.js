@@ -315,7 +315,16 @@
     var t = sec.h2.textContent || '';
     return role(sec.h2) !== 'faq' && role(sec.h2) !== 'sources' && role(sec.h2) !== 'offer' && !FAQ_RE.test(t) && !SOURCES_RE.test(t);
   }
-  function hasOffer(sec) { for (var i = 0; i < sec.nodes.length; i++) if (sec.nodes[i].className && String(sec.nodes[i].className).indexOf('offer-card') !== -1) return true; return false; }
+  function hasOffer(sec, next) {
+    // The offer may be rebuilt as a nested card or remain a marked H2 after an editor adds other content.
+    if (next && role(next.h2) === 'offer') return true;
+    var selector = '.offer-card, [data-mspl-role="offer"], a[data-mspl-role="button"], a.mspl-btn, a.mspl-offer-button, a.w-button, a[class*="c-button-main"]';
+    for (var i = 0; i < sec.nodes.length; i++) {
+      var n = sec.nodes[i];
+      if (isButtonLine(n) || n.matches(selector) || n.querySelector(selector)) return true;
+    }
+    return false;
+  }
 
   function layoutSections(root, cfg) {
     var secs = sectionsOf(root), stats = { split: 0, ledes: 0, cards: 0, lists: 0, callouts: 0, highlights: 0 };
@@ -336,7 +345,7 @@
       // 4b. cards
       stats.cards += role(sec.h2) === 'table' ? editableTable(sec.nodes, cfg) : cardify(sec.nodes, cfg);
       // 4c. callout (not in the CTA section, which ends on the offer banner)
-      if (!hasOffer(sec)) stats.callouts += calloutRuns(sec.nodes.filter(function (n) { return n.parentNode === root; }));
+      if (!hasOffer(sec, secs[s + 1])) stats.callouts += calloutRuns(sec.nodes.filter(function (n) { return n.parentNode === root; }));
       // 4e. lists last, so the run detection above still sees the list exactly where it was (a list breaks a run)
       stats.lists += listify(sec.nodes, cfg);
     }
@@ -599,7 +608,60 @@
     return 'fallback';
   }
 
-  // Controls are runtime UI outside the stored article. No image or biography content is rewritten.
+  // Short bullets read plainly at each viewport width. Keep the original strong/b wrappers intact.
+  function shortBullets(root) {
+    if (root.hasAttribute('data-mspl-short-bullets')) return;
+    var doc = root.ownerDocument, win = doc.defaultView, range = doc.createRange();
+    if (typeof range.getBoundingClientRect !== 'function') return;
+    root.setAttribute('data-mspl-short-bullets', '1');
+    var details = Array.prototype.slice.call(root.querySelectorAll('.mspl-ig--bullets .mspl-ig__detail'));
+    // An editor may keep one paragraph inside an LI. Measure it in place, never flatten its content.
+    var cards = root.querySelectorAll('.mspl-ig--bullets .mspl-ig__card');
+    for (var c = 0; c < cards.length; c++) {
+      var content = Array.prototype.filter.call(cards[c].childNodes, function (n) {
+        return n.nodeType === 1 || (n.nodeType === 3 && n.nodeValue.trim());
+      });
+      if (content.length === 1 && isTag(content[0], 'P') &&
+          !content[0].querySelector('ul, ol, p, div, table, figure, img, picture, video, audio, button')) details.push(content[0]);
+    }
+    var queued = false, previousWidth = -1;
+    function refresh() {
+      queued = false;
+      for (var i = 0; i < details.length; i++) {
+        var detail = details[i];
+        // Normal weight is the stable baseline: bold must not move its own text across the cutoff.
+        detail.classList.add('mspl-bullet-measure');
+        var style = win.getComputedStyle(detail);
+        var available = detail.getBoundingClientRect().width -
+          parseFloat(style.paddingLeft || 0) - parseFloat(style.paddingRight || 0) -
+          parseFloat(style.borderLeftWidth || 0) - parseFloat(style.borderRightWidth || 0);
+        range.selectNodeContents(detail);
+        var rect = range.getBoundingClientRect(), lineHeight = parseFloat(style.lineHeight);
+        var plain = available > 0 && rect.width > 0 && rect.height > 0 && lineHeight > 0 &&
+          rect.height <= lineHeight * 1.25 && rect.width < available * 0.7;
+        detail.classList.remove('mspl-bullet-measure');
+        detail.classList.toggle('mspl-bullet-plain', plain);
+      }
+    }
+    function schedule() {
+      if (!queued) { queued = true; win.requestAnimationFrame(refresh); }
+    }
+    refresh();
+    win.addEventListener('resize', schedule);
+    if (win.ResizeObserver) {
+      var observer = new win.ResizeObserver(function (entries) {
+        var width = entries[0].contentRect.width;
+        if (width !== previousWidth) { previousWidth = width; schedule(); }
+      });
+      observer.observe(root);
+    }
+    if (doc.fonts) {
+      doc.fonts.ready.then(schedule);
+      doc.fonts.addEventListener('loadingdone', schedule);
+    }
+  }
+
+  // Controls are runtime UI outside the stored article. No image content is rewritten.
   var zoomDialog, zoomImage, zoomViewport, zoomOpener, oldOverflow;
   function zoomButton(label, cls, action) {
     var b = document.createElement('button'); b.type = 'button'; b.className = cls;
@@ -676,51 +738,6 @@
       zoomDialog.showModal(); zoomDialog.querySelector('.mspl-zoom__close').focus();
     });
   }
-  function authorExcerpts() {
-    var bios = document.querySelectorAll('.mspl-author__bio');
-    for (var i = 0; i < bios.length; i++) (function (bio) {
-      if (bio.getAttribute('data-mspl-excerpt') === '1') return;
-      // Sentence detection needs the spaces rendered by block/BR boundaries. Map those synthetic
-      // spaces back to unchanged text-node offsets so the excerpt can still clone the original DOM.
-      var text = '', sourceOffset = 0, sourceOffsets = [0];
-      function separator() {
-        if (text && !/\s$/.test(text)) { text += ' '; sourceOffsets.push(sourceOffset); }
-      }
-      function readText(n) {
-        if (n.nodeType === 3) {
-          for (var j = 0; j < n.nodeValue.length; j++) { text += n.nodeValue[j]; sourceOffsets.push(++sourceOffset); }
-          return;
-        }
-        if (n.nodeType !== 1) return;
-        if (n.tagName === 'BR') { separator(); return; }
-        var block = /^(P|DIV|LI|BLOCKQUOTE|H[1-6])$/.test(n.tagName);
-        if (block) separator();
-        for (var child = n.firstChild; child; child = child.nextSibling) readText(child);
-        if (block) separator();
-      }
-      readText(bio);
-      var cuts = boundaries(text), end = -1;
-      for (var c = 0; c < cuts.length; c++) {
-        var candidate = text.slice(0, cuts[c]).trim();
-        if (/(?:\b(?:Dr|Mr|Mrs|Ms|Prof|Sr|Jr|St)|\b[A-Z])\.$/.test(candidate)) continue;
-        end = cuts[c]; break;
-      }
-      if (end < 0 || !text.slice(end).trim()) return;
-      while (end > 0 && /\s/.test(text[end - 1])) end--;
-      var nodes = textNodes(bio), point = pointAt(nodes, sourceOffsets[end]), range = document.createRange();
-      range.setStart(bio, 0); range.setEnd(point.node, point.offset);
-      var excerpt = document.createElement('div'); excerpt.className = 'mspl-author__excerpt'; excerpt.appendChild(range.cloneContents());
-      var toggle = document.createElement('button'); toggle.type = 'button'; toggle.className = 'mspl-author__toggle';
-      uniqueId(bio, 'mspl-author-bio'); toggle.setAttribute('aria-controls', bio.id); toggle.setAttribute('aria-expanded', 'false');
-      toggle.textContent = 'Read full biography'; bio.parentNode.insertBefore(excerpt, bio);
-      bio.parentNode.insertBefore(toggle, bio.nextSibling); bio.hidden = true; bio.setAttribute('data-mspl-excerpt', '1');
-      toggle.addEventListener('click', function () {
-        var expanded = toggle.getAttribute('aria-expanded') !== 'true';
-        bio.hidden = !expanded; excerpt.hidden = expanded;
-        toggle.setAttribute('aria-expanded', String(expanded)); toggle.textContent = expanded ? 'Show less' : 'Read full biography';
-      });
-    })(bios[i]);
-  }
 
   function init() {
     var roots = document.querySelectorAll('.blog-details-content .w-richtext');
@@ -729,7 +746,6 @@
     for (var i = 0; i < roots.length; i++) { if (!roots[i].closest('.mspl-author')) { root = roots[i]; break; } }
     if (!root || root.getAttribute('data-mspl-layout') === '3') return;
     root.setAttribute('data-mspl-layout', '3');
-    authorExcerpts();
     var accent = applyAccent(root);
     var corners = applyCorners(root);
     var rebuilt = { tldr: 0, offer: 0 };
@@ -737,6 +753,7 @@
     readingTime(root);
     classifyFigures(root);
     var stats = layoutSections(root, config());
+    shortBullets(root);
     stats.toc = buildToc(root);
     stats.buttons = buttonFallback(root);
     collapseSources(root);
