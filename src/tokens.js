@@ -8,6 +8,21 @@
   var TAGS = 'p, li, h1, h2, h3, h4, h5, h6, blockquote, figcaption';
   var PAIR = /\[\.([\w-]+)\](.*?)\[\.\1\]/m;
 
+  function declaredRoot() {
+    var declarations = document.querySelectorAll('[id="mspl-blog-layout-config"]');
+    if (!declarations.length) return;
+    document.documentElement.setAttribute('data-mspl-root-mode', 'explicit');
+    var selector = '';
+    try {
+      if (declarations.length === 1 && declarations[0].tagName === 'SCRIPT' && declarations[0].getAttribute('type') === 'application/json') {
+        var parsed = JSON.parse(declarations[0].textContent);
+        if (parsed && typeof parsed.rootSelector === 'string') selector = parsed.rootSelector;
+      }
+    } catch (e) { /* Empty selector is a closed gate, never legacy fallback. */ }
+    window.MSPL_LAYOUT = window.MSPL_LAYOUT || {};
+    window.MSPL_LAYOUT.rootSelector = selector;
+  }
+
   function convert(parent) {
     // Only whole sibling elements may move: never split/recreate a link or handler.
     var children = Array.prototype.slice.call(parent.children);
@@ -51,6 +66,7 @@
   }
 
   function init() {
+    declaredRoot();
     var roots = document.querySelectorAll('.w-richtext');
     var cfg = window.MSPL_LAYOUT || {};
     if (Object.prototype.hasOwnProperty.call(cfg, 'rootSelector')) {
@@ -76,6 +92,7 @@
   }
 
   // Close the CSS fallback immediately, even while waiting for the DOM.
+  declaredRoot();
   if (window.MSPL_LAYOUT && Object.prototype.hasOwnProperty.call(window.MSPL_LAYOUT, 'rootSelector')) document.documentElement.setAttribute('data-mspl-root-mode', 'explicit');
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
