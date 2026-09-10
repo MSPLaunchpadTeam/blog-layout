@@ -81,7 +81,7 @@
   }
 
   function init() {
-    var roots = document.querySelectorAll('.w-richtext');
+    var roots = document.querySelectorAll(document.documentElement.getAttribute('data-mspl-root-mode') === 'explicit' ? '.mspl-article-root' : '.w-richtext');
     for (var i = 0; i < roots.length; i++) if (!roots[i].closest('.mspl-author')) build(roots[i]);
   }
 

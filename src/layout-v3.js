@@ -740,8 +740,9 @@
   }
 
   function init() {
-    var roots = document.querySelectorAll('.blog-details-content .w-richtext');
-    if (!roots.length) roots = document.querySelectorAll('.w-richtext');
+    var explicit = document.documentElement.getAttribute('data-mspl-root-mode') === 'explicit';
+    var roots = document.querySelectorAll(explicit ? '.mspl-article-root' : '.blog-details-content .w-richtext');
+    if (!explicit && !roots.length) roots = document.querySelectorAll('.w-richtext');
     var root = null;
     for (var i = 0; i < roots.length; i++) { if (!roots[i].closest('.mspl-author')) { root = roots[i]; break; } }
     if (!root || root.getAttribute('data-mspl-layout') === '3') return;

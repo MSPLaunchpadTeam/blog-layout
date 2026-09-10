@@ -62,6 +62,17 @@ and a new paste.
 
 ## Sandbox candidates
 
+October candidate rc.14 adds an explicit `window.MSPL_LAYOUT.rootSelector` option.
+Set it before the bundle to select exactly one article `.w-richtext`; token
+conversion, FAQ and layout then operate on that root and leave footer rich text
+alone. Missing, invalid or ambiguous explicit selectors fail closed. Existing
+sites without the option retain their previous behavior. Use the per-client
+installation packages in EA `webflow/october/`; preserve Refokus on those client
+sites until their complete token audit authorizes removal. This candidate is an
+immutable branch commit, not a stable release; shared `@3` remains unchanged.
+Rollback restores each site's saved custom code and previous immutable assets.
+The six client installations and real article/image acceptance remain user gates.
+
 rc.13 matches section-opening paragraph colour to ordinary body copy and displays
 the main image at intrinsic proportions. It retains rc.12 token conversion and
 all FAQ/layout interactions. Use immutable candidate URLs only; no stable tag.

@@ -52,6 +52,21 @@
 
   function init() {
     var roots = document.querySelectorAll('.w-richtext');
+    var cfg = window.MSPL_LAYOUT || {};
+    if (Object.prototype.hasOwnProperty.call(cfg, 'rootSelector')) {
+      document.documentElement.setAttribute('data-mspl-root-mode', 'explicit');
+      document.documentElement.setAttribute('data-mspl-root-status', 'invalid');
+      var oldRoots = document.querySelectorAll('.mspl-article-root');
+      for (var old = 0; old < oldRoots.length; old++) oldRoots[old].classList.remove('mspl-article-root');
+      roots = [];
+      try {
+        var selected = typeof cfg.rootSelector === 'string' && cfg.rootSelector.trim() ? document.querySelectorAll(cfg.rootSelector) : [];
+        if (selected.length !== 1 || !selected[0].classList.contains('w-richtext') || selected[0].closest('header, nav, footer, .mspl-author')) return;
+        roots = selected;
+        roots[0].classList.add('mspl-article-root');
+        document.documentElement.setAttribute('data-mspl-root-status', 'selected');
+      } catch (e) { return; }
+    }
     for (var i = 0; i < roots.length; i++) {
       var elements = roots[i].querySelectorAll(TAGS);
       for (var j = 0; j < elements.length; j++) {
@@ -60,6 +75,8 @@
     }
   }
 
+  // Close the CSS fallback immediately, even while waiting for the DOM.
+  if (window.MSPL_LAYOUT && Object.prototype.hasOwnProperty.call(window.MSPL_LAYOUT, 'rootSelector')) document.documentElement.setAttribute('data-mspl-root-mode', 'explicit');
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
