@@ -1,0 +1,17 @@
+/* mspl-blog-images-v1: exact runtime-owned elements only; no article typography. */
+img[data-mspl-image-owned="hero"],
+img[data-mspl-image-owned="thumbnail"] {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  object-fit: contain !important;
+}
+[data-mspl-image-wrapper="thumbnail"] {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+}

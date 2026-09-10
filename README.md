@@ -1,5 +1,35 @@
 # blog-layout
 
+## Universal article + separate image candidate (rc.15)
+
+The current candidate adds `blog-article.js` / `blog-article.css` for a universal
+Blog Posts template installation and separate `blog-images/{client}.js` adapters
+with `blog-images.css` for Site Footer installation. Use EA's generated split
+packages and full immutable commit URLs. **Do not tag this candidate or update
+shared `@3`.** Existing `blog-layout.js/css` remain the rc.14 compatibility assets.
+
+Add `data-mspl-article="true"` to exactly one CMS-bound article Rich Text. The
+universal runtime needs no client registry and works on future Webflow sites.
+Each image adapter validates its own site identity and handles only verified
+blog hero/card targets. Prefer `data-mspl-hero="true"` and
+`data-mspl-thumbnail="true"`; current verified selectors remain fallbacks.
+Home/listing pages receive only the image adapter, never article formatting.
+
+Source and builders remain in EA `projects/blog-infographics/preview/assets/`
+and `webflow/`. Build articles with `build_article_bundle.mjs --out <this clone>`
+and images with `october/build-image-packages.mjs --assets-dir <this clone>`.
+Do not hand-edit generated assets. New client image releases do not require an
+article upgrade. The managed sources are mirrored under `src/` for inspection.
+
+Keep Refokus and unrelated scripts. Save complete prior custom-code fields;
+replace only owned legacy layout/config/image-style blocks before installing.
+Rollback restores the prior exact code/settings and republishes. Site publication
+and per-client browser acceptance remain Thanh's gates. These browser assets do
+not generate/brand images or implement Airtable supplied-image bypass.
+
+The older release recipes below describe the historical stable installation;
+they must not be used to promote this immutable candidate.
+
 The MSP Launchpad blog reading layout (layout v3 + the FAQ accordion), served to every blog post through jsDelivr from the
 Blog Posts template page of each site.
 
