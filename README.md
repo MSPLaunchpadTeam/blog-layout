@@ -1,6 +1,14 @@
 # blog-layout
 
-## Universal article + separate image candidate (rc.15)
+## Universal article + separate image candidate (rc.16)
+
+The approved manual article layout adds styled bullet lists and numbered steps,
+read-time metadata, verified CMS author cards and uncropped author portraits with
+headroom. The manual pipeline supplies short no-offer CTA content and omits the
+separate Sources appendix while preserving inline citations. These managed
+components inherit the host typography, accent and corner treatment. Historical
+unmarked articles keep their existing content. Author cards require the new
+editor-safe article markers; site bylines must bind to the current article author.
 
 The current candidate adds `blog-article.js` / `blog-article.css` for a universal
 Blog Posts template installation and separate `blog-images/{client}.js` adapters

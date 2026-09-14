@@ -48,12 +48,14 @@ function ready() {
   state.assets.cssLoaded=true;
   root.setAttribute('data-mspl-article-active','true');
   try {
+    articleAuthor.prepare(root);
     modules.tokens(root);
     modules.faq(root);
     modules.layout(root);
+    articleAuthor.finish(root);
   } catch(error) {
     state.partial=true;
-    report('error','initialization-failed');
+    report('error',error.articleCode || 'initialization-failed');
     return;
   }
   report('ready','article-ready');
