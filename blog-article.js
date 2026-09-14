@@ -892,7 +892,8 @@ var articleAuthor = (function () {
     }
     for (var j = 0; j < node.attributes.length; j++) if (/^on/i.test(node.attributes[j].name)) fail('unsafe-content');
   }
-  function publicURL(value, sameOrigin) {
+  function stagingSite(siteId) { return /^[a-f0-9]{24}$/.test(siteId || '') && siteId === document.documentElement.getAttribute('data-wf-site') && /^[a-z0-9-]+\.webflow\.io$/i.test(window.location.hostname) && window.location.protocol === 'https:'; }
+  function publicURL(value, sameOrigin, siteId) {
     var url;
     try { url = new URL(value, document.baseURI); } catch (e) { fail('unsafe-url'); }
     if (!/^https:\/\//i.test(value || '') || url.protocol !== 'https:' || url.username || url.password || /(?:^|\.)(?:localhost|local|internal)$/i.test(url.hostname) || /^\d+(?:\.\d+){3}$/.test(url.hostname)) fail('unsafe-url');
@@ -904,7 +905,10 @@ var articleAuthor = (function () {
         var value = declared[i].getAttribute(declared[i].tagName === 'LINK' ? 'href' : 'content');
         try { if (new URL(publicURL(value, false)).origin === url.origin) matched = true; } catch (e) { /* An invalid optional declaration grants no origin. */ }
       }
-      if (!matched) fail('profile-origin-mismatch');
+      // The pipeline's verified site marker also supports Webflow staging when
+      // the client has no optional canonical metadata. Custom domains still
+      // require their own origin; a marker from another site grants nothing.
+      if (!matched && !stagingSite(siteId)) fail('profile-origin-mismatch');
     }
     return url.href;
   }
@@ -952,7 +956,7 @@ var articleAuthor = (function () {
     var image = photo.querySelector('img'), images = photo.querySelectorAll('img'), anchor = link.querySelector('a');
     if (images.length !== 1 || !image || !image.hasAttribute('alt') || !anchor || link.querySelectorAll('a').length !== 1 || text(link) !== text(anchor) || !text(anchor)) fail('invalid-photo-or-link');
     for (var la = 0; la < link.attributes.length; la++) if (/^on/i.test(link.attributes[la].name)) fail('unsafe-link');
-    publicURL(image.getAttribute('src'), false); var profile = publicURL(anchor.getAttribute('href'), true);
+    publicURL(image.getAttribute('src'), false); var siteId = link.getAttribute('data-mspl-site-id'), profile = publicURL(anchor.getAttribute('href'), true, siteId);
     var photoNodes = [photo].concat(Array.prototype.slice.call(photo.querySelectorAll('*')));
     photoNodes.forEach(function (node) { if (['FIGURE', 'DIV', 'IMG'].indexOf(node.tagName) === -1) fail('unsafe-photo'); for (var a = 0; a < node.attributes.length; a++) if (/^on/i.test(node.attributes[a].name)) fail('unsafe-photo'); });
     if (anchor.children.length) fail('unsafe-link');
@@ -974,7 +978,7 @@ var articleAuthor = (function () {
     var stash = document.createDocumentFragment(); if (end) stash.appendChild(end); sources(root, stash);
     // Original marker nodes remain intact in the owned card/metadata; removed sentinels
     // and sources are retained in memory. The saved CMS body remains plain readable markup.
-    root.__msplArticleAuthor = {card:card, meta:meta, stash:stash, profile:profile};
+    root.__msplArticleAuthor = {card:card, meta:meta, stash:stash, profile:profile, stagingProfile:stagingSite(siteId) ? window.location.origin + new URL(profile).pathname : null};
   }
   function finish(root) {
     var saved = root.__msplArticleAuthor; if (!saved) return;
@@ -990,7 +994,7 @@ var articleAuthor = (function () {
     var anchors = document.querySelectorAll('a[href]');
     for (var i = 0; i < anchors.length; i++) {
       var anchor = anchors[i];
-      if (root.contains(anchor) || saved.card.contains(anchor) || anchor.href !== saved.profile || anchor.closest('nav,footer,[role="navigation"],[role="contentinfo"],.mspl-author')) continue;
+      if (root.contains(anchor) || saved.card.contains(anchor) || (anchor.href !== saved.profile && anchor.href !== saved.stagingProfile) || anchor.closest('nav,footer,[role="navigation"],[role="contentinfo"],.mspl-author')) continue;
       var portraits = anchor.querySelectorAll('img');
       for (var j = 0; j < portraits.length; j++) {
         portraits[j].setAttribute('data-mspl-author-portrait', 'true');
