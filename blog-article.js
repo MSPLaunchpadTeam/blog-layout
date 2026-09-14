@@ -892,7 +892,13 @@ var articleAuthor = (function () {
     }
     for (var j = 0; j < node.attributes.length; j++) if (/^on/i.test(node.attributes[j].name)) fail('unsafe-content');
   }
-  function stagingSite(siteId) { return /^[a-f0-9]{24}$/.test(siteId || '') && siteId === document.documentElement.getAttribute('data-wf-site') && /^[a-z0-9-]+\.webflow\.io$/i.test(window.location.hostname) && window.location.protocol === 'https:'; }
+  function stagingSite(siteId) {
+    if (!/^[a-f0-9]{24}$/.test(siteId || '') || siteId !== document.documentElement.getAttribute('data-wf-site') || window.location.protocol !== 'https:') return false;
+    if (/^[a-z0-9-]+\.webflow\.io$/i.test(window.location.hostname)) return true;
+    var canvas = /^([a-z0-9-]+)\.canvas\.webflow\.com$/i.exec(window.location.hostname);
+    if (!canvas) return false;
+    try { return new URL(document.referrer).origin === 'https://' + canvas[1] + '.design.webflow.com'; } catch (e) { return false; }
+  }
   function publicURL(value, sameOrigin, siteId) {
     var url;
     try { url = new URL(value, document.baseURI); } catch (e) { fail('unsafe-url'); }
