@@ -436,7 +436,45 @@
 
   // 6. CTA buttons: only where the site's own classes did not draw one ---------------------------------------------------
   function isTransparent(el) { var bg = window.getComputedStyle(el).backgroundColor; return !bg || bg === 'transparent' || /^rgba\(\s*\d+,\s*\d+,\s*\d+,\s*0\s*\)$/.test(bg); }
+  function ctaHref(value) {
+    return typeof value === 'string' && !/[\s<>"'\\]/.test(value) &&
+      (/^\/(?!\/)/.test(value) || /^https?:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[/?#][^\s]*)?$/i.test(value));
+  }
+  function restoreCtaButtons(root) {
+    var cards = root.querySelectorAll('.offer-card');
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i], children = Array.prototype.slice.call(card.children);
+      var heading = children.find(function(n) { return n.tagName === 'H2'; });
+      var lines = children.filter(function(n) { return (n.textContent || '').trim(); });
+      var p = lines[lines.length - 1];
+      if (!p || p.tagName !== 'P' || lines.filter(function(n) { return n.tagName === 'P'; }).length < 2) continue;
+      var links = Array.prototype.slice.call(p.querySelectorAll('a'));
+      var href = links.length ? links[0].getAttribute('href') : heading && heading.getAttribute('data-mspl-cta-href');
+      if (!ctaHref(href) || links.some(function(a) { return a.getAttribute('href') !== href; })) {
+        card.setAttribute('data-mspl-cta-status', links.length ? 'ambiguous-destination' : 'missing-destination');
+        continue;
+      }
+      var a = links[0] || document.createElement('a');
+      // The last line owns the action even when a teammate appends a replacement.
+      Array.prototype.forEach.call(card.querySelectorAll('a[data-mspl-role="button"],a.mspl-btn,a.mspl-offer-button'), function(old) {
+        if (p.contains(old)) return;
+        old.removeAttribute('data-mspl-role'); old.classList.remove('mspl-btn', 'mspl-offer-button');
+        var oldLine = old.closest('p');
+        if (oldLine) oldLine.classList.remove('mspl-btn-line', 'mspl-offer__button');
+      });
+      // Move existing nodes, preserving the full edited line and inline emphasis.
+      // A Webflow save may put formatting around the link or link only part of it.
+      links.forEach(function(link) { while (link.firstChild) link.parentNode.insertBefore(link.firstChild, link); link.remove(); });
+      while (p.firstChild) a.appendChild(p.firstChild);
+      a.setAttribute('href', href); a.setAttribute('data-mspl-role', 'button');
+      p.appendChild(a); addClass(p, 'mspl-offer__button'); addClass(p, 'mspl-btn-line');
+      addClass(a, 'mspl-offer-button');
+      if (heading) heading.setAttribute('data-mspl-cta-href', href);
+      card.setAttribute('data-mspl-cta-status', links.length ? 'ready' : 'recovered');
+    }
+  }
   function buttonFallback(root) {
+    restoreCtaButtons(root);
     var anchors = root.querySelectorAll('p > a, a[data-mspl-role="button"]'), made = 0;
     for (var i = 0; i < anchors.length; i++) {
       var a = anchors[i], p = a.parentNode, text = (a.textContent || '').replace(/\s+/g, ' ').trim();
