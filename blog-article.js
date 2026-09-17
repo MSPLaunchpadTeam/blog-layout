@@ -586,6 +586,8 @@ return build;})(),layout:(function(){
     for (var i = 0; i < anchors.length; i++) {
       var a = anchors[i], p = a.parentNode, text = (a.textContent || '').replace(/\s+/g, ' ').trim();
       var marked = role(a) === 'button';
+      var card = a.closest('.offer-card');
+      if (card && card.hasAttribute('data-mspl-cta-status') && !marked) continue;
       if (!text || (!marked && words(text) > BUTTON_MAX_WORDS)) continue;
       if ((p.textContent || '').replace(/\s+/g, ' ').trim() !== text) continue;      // the line must be the link alone
       var inner = a.querySelector('span'); var probe = inner || a;
