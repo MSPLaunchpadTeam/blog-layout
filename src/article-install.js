@@ -48,10 +48,22 @@ function ready() {
   state.assets.cssLoaded=true;
   root.setAttribute('data-mspl-article-active','true');
   try {
+    // Generated labels should inherit native article prose, not an unrelated
+    // template wrapper font. Keep native headings and CTA profile rules intact.
+    var bodySample=Array.prototype.find.call(root.children,function(node){
+      return node.tagName==='P' && node.textContent.trim() &&
+        !node.hasAttribute('data-mspl-role') && !node.querySelector('[data-mspl-role="button"]');
+    });
+    if(bodySample){
+      var bodyFont=window.getComputedStyle(bodySample).fontFamily;
+      if(bodyFont)root.style.setProperty('--mspl-body-font',bodyFont);
+    }
+    articleCta.prepare(root);
     articleAuthor.prepare(root);
     modules.tokens(root);
     modules.faq(root);
     modules.layout(root);
+    articleCta.finish(root);
     articleAuthor.finish(root);
   } catch(error) {
     state.partial=true;
