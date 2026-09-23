@@ -176,6 +176,22 @@
     wrap.appendChild(f);
   }
 
+  // Preserve source words/formatting; only hide an ordinal already supplied by the table counter.
+  function hideRowOrdinal(heading, index, wrap) {
+    if (!wrap.classList.contains('mspl-ig--table') || heading.querySelector('.mspl-row-ordinal')) return;
+    var match = /^\s*(\d{1,3})[.)]\s+/.exec(heading.textContent || '');
+    if (!match || Number(match[1]) !== index + 1) return;
+    var remaining = match[0].length;
+    textNodes(heading).forEach(function (node) {
+      if (!remaining) return;
+      var length = Math.min(remaining, node.nodeValue.length);
+      if (!length) return;
+      if (length < node.nodeValue.length) node.splitText(length);
+      var span = document.createElement('span'); span.className = 'mspl-row-ordinal';
+      node.parentNode.insertBefore(span, node); span.appendChild(node); remaining -= length;
+    });
+  }
+
   // 4b. runs of H3 + one short paragraph -> a structured block of cards (each h3 + p pair moves into its card as it is)
   function cardify(list, cfg) {
     var i = 0, made = 0;
@@ -195,6 +211,7 @@
         for (var k = 0; k < pairs.length; k++) {
           var card = document.createElement('div');
           card.className = 'mspl-ig__card';
+          hideRowOrdinal(pairs[k][0], k, wrap);
           card.appendChild(pairs[k][0]);   // the h3 itself, tag and all - never a copy of its text
           card.appendChild(pairs[k][1]);
           grid.appendChild(card);
@@ -227,9 +244,10 @@
         var wrap = makeBlock('points', rows.length, cfg), grid = document.createElement('div');
         grid.className = 'mspl-ig__grid'; wrap.appendChild(grid);
         rows[0].heading.parentNode.insertBefore(wrap, rows[0].heading);
-        rows.forEach(function (r) {
+        rows.forEach(function (r, index) {
           var card = document.createElement('div'), body = document.createElement('div');
           card.className = 'mspl-ig__card'; body.className = 'mspl-ig__body';
+          hideRowOrdinal(r.heading, index, wrap);
           card.appendChild(r.heading); r.detail.forEach(function (n) { body.appendChild(n); });
           card.appendChild(body); grid.appendChild(card);
         });
@@ -242,11 +260,26 @@
 
   // 4e. a list of LIST_MIN+ items -> the same block: the ul/ol stays the list (it is the grid), every li a card, a
   // leading <strong> the card's label exactly as written (colon included), the rest of the item its detail. An item
-  // with block children (a nested list, a paragraph) is classed and otherwise left alone.
-  function leadingStrong(li) {
-    var n = li.firstChild;
+  // with block children keeps those children intact inside its detail container.
+  function firstContent(el) {
+    var n = el.firstChild;
     while (n && n.nodeType === 3 && !n.nodeValue.trim()) n = n.nextSibling;
+    return n;
+  }
+  function leadingStrong(li) {
+    var n = firstContent(li);
+    if (isTag(n, 'P')) n = firstContent(n);
     return (isTag(n, 'STRONG') || isTag(n, 'B')) ? n : null;
+  }
+  // Move existing punctuation only; never insert a colon or reconstruct inline markup.
+  function attachLabelColon(strong) {
+    if (/:\s*$/.test(strong.textContent || '')) return;
+    var next = strong.nextSibling;
+    if (!next || next.nodeType !== 3) return;
+    var match = /^\s*:/.exec(next.nodeValue);
+    if (!match) return;
+    strong.appendChild(document.createTextNode(match[0]));
+    next.nodeValue = next.nodeValue.slice(match[0].length);
   }
   function hasBlockChild(li) {
     for (var c = li.firstElementChild; c; c = c.nextElementSibling) { if (/^(UL|OL|P|DIV|TABLE|FIGURE|H[1-6])$/.test(c.tagName)) return true; }
@@ -276,9 +309,19 @@
         addClass(li, 'mspl-ig__card');
         // Normal bullets keep inline emphasis, even when it starts the item.
         var strong = kind === 'rows' ? null : leadingStrong(li);
-        if (strong) addClass(strong, 'mspl-ig__label');
-        if (hasBlockChild(li)) continue;
-        var detail = document.createElement('span');
+        if (strong) {
+          addClass(strong, 'mspl-ig__label');
+          attachLabelColon(strong);
+          if (strong.parentNode !== li) {
+            var paragraph = strong.parentNode;
+            // Retain leading whitespace before the moved label, then keep the original P.
+            while (paragraph.firstChild !== strong) li.insertBefore(paragraph.firstChild, paragraph);
+            li.insertBefore(strong, paragraph);
+          }
+        }
+        var block = hasBlockChild(li);
+        if (block && !strong) continue;
+        var detail = document.createElement(block ? 'div' : 'span');
         detail.className = 'mspl-ig__detail';
         var n = strong ? strong.nextSibling : li.firstChild;
         while (n) { var next = n.nextSibling; detail.appendChild(n); n = next; }
