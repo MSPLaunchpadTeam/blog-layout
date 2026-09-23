@@ -8,6 +8,9 @@
   overflow-wrap: anywhere;
 }
 [data-mspl-article-active="true"] [id] { scroll-margin-top: 110px; }
+/* Inline copy follows its surrounding text even when the host sizes links separately. */
+[data-mspl-article-active="true"] :is(p,li,blockquote,.mspl-ig__detail) a:not(.mspl-btn):not(.mspl-offer-button):not(.mspl-toc__links a) { font-size: inherit !important; line-height: inherit !important; }
+[data-mspl-article-active="true"] :is(p,li,.mspl-ig__detail) :is(strong,b) { font-size: inherit !important; line-height: inherit !important; }
 [data-mspl-article-active="true"] :is(.mspl-faq__a,.mspl-toc__links,.mspl-toc__toggle,.mspl-toc__title,.mspl-sources__list)[hidden] { display: none !important; }
 [data-mspl-article-active="true"] :is(.tldr-card,.mspl-callout,.mspl-ig--table,.offer-card,.mspl-sources) {
   box-sizing: border-box; max-width: 100%; border: 1px solid var(--mspl-rule); border-radius: var(--mspl-radius); padding: 1em; margin-block: 1.4em;
@@ -51,6 +54,8 @@
   [data-mspl-article-active="true"] .mspl-ig--table .mspl-ig__card > h3 { font-size: 30px !important; }
 }
 [data-mspl-article-active="true"] .mspl-ig--table .mspl-ig__card > :is(p,.mspl-ig__body,.mspl-ig__detail) { min-width: 0; margin: 0; }
+[data-mspl-article-active="true"] .mspl-ig--table .mspl-ig__body > :first-child { margin-top: 0; }
+[data-mspl-article-active="true"] .mspl-ig--table .mspl-ig__body > :last-child { margin-bottom: 0; }
 [data-mspl-article-active="true"] .mspl-ig--table .mspl-ig__card:nth-child(odd) { background: color-mix(in srgb, var(--mspl-accent) 5%, transparent); }
 [data-mspl-article-active="true"] .mspl-ig__footer { font-size: 12px; color: inherit; padding: .8em 1em; text-align: end; }
 [data-mspl-article-active="true"] .mspl-ig--cards .mspl-ig__card { margin-block: .6em; padding-block: .3em; }
@@ -159,8 +164,9 @@ dialog[data-mspl-article-dialog="true"][data-size="fit"] .mspl-zoom__viewport im
 [data-mspl-article-active="true"] .mspl-ig--rail .mspl-ig__card::before { counter-increment: mspl-article-step; content: counter(mspl-article-step); position: absolute; left: 0; top: 0; width: 36px; height: 36px; display: grid; place-items: center; background: var(--mspl-surface, Canvas); border: 2px solid var(--mspl-accent); color: var(--mspl-accent); border-radius: var(--mspl-radius); font-size: 14px; font-weight: 700; }
 [data-mspl-article-active="true"] .mspl-ig--rail .mspl-ig__label { display: block; font-weight: 700; margin: 0 0 6px; }
 [data-mspl-article-active="true"] .mspl-ig--bullets .mspl-ig__grid { list-style: none; padding: 0; }
-[data-mspl-article-active="true"] .mspl-ig--bullets .mspl-ig__card { display: block; position: relative; padding-left: 26px; list-style: none; }
-[data-mspl-article-active="true"] .mspl-ig--bullets .mspl-ig__card::before { content: ''; position: absolute; left: 2px; top: 1.25em; width: 7px; height: 7px; border-radius: 50%; background: var(--mspl-accent); }
+[data-mspl-article-active="true"] .mspl-ig--bullets .mspl-ig__card { display: block; position: relative; margin: 0; padding: 14px 0 14px 38px; list-style: none; }
+[data-mspl-article-active="true"] .mspl-ig--bullets .mspl-ig__card::before { content: ''; position: absolute; left: 0; top: 17px; width: 20px; height: 20px; border-radius: var(--mspl-icon-radius, 6px); background: color-mix(in srgb, var(--mspl-accent) 12%, transparent); }
+[data-mspl-article-active="true"] .mspl-ig--bullets .mspl-ig__card::after { content: ''; position: absolute; left: 7px; top: 22px; width: 5px; height: 8px; border-right: 2px solid var(--mspl-accent); border-bottom: 2px solid var(--mspl-accent); transform: rotate(45deg); }
 
 /* Managed author metadata may sit beside the Rich Text root. Only explicitly
    managed blocks and the bound byline image receive these presentation rules. */
