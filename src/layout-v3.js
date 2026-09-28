@@ -839,14 +839,28 @@
         }
         timer = win.setTimeout(function () { finish(NaN); }, 3000);
         Array.prototype.forEach.call(doc.querySelectorAll('link[rel~="stylesheet"], style'), function (source) {
-          var resource = inert(source);
-          if (source.tagName.toLowerCase() === 'link') {
-            waiting++;
-            resource.onload = function () { waiting--; read(); };
-            resource.onerror = function () { finish(NaN); };
-            resource.setAttribute('href', source.href);
-          } else resource.textContent = source.textContent;
+          var resource = inert(source), settled = false, isLink = source.tagName.toLowerCase() === 'link';
+          waiting++;
+          resource.onload = function () {
+            if (settled || finished) return;
+            settled = true; waiting--; read();
+          };
+          resource.onerror = function () { finish(NaN); };
+          if (isLink) resource.setAttribute('href', source.href);
+          else resource.textContent = source.textContent;
           frameDoc.head.appendChild(resource);
+          if (!isLink) {
+            // A parsed inline sheet without imports is already complete. Imports,
+            // including nested/cross-origin ones, wait for the element's load/error:
+            // an imported CSSStyleSheet can exist while its contents still load.
+            try {
+              var rules = resource.sheet && resource.sheet.cssRules, complete = !!rules;
+              for (var i = 0; rules && i < rules.length; i++) {
+                if (rules[i].type === 3 /* CSSImportRule */) { complete = false; break; }
+              }
+              if (complete) resource.onload();
+            } catch (_) { /* Inaccessible sheets must settle through load/error or the cap. */ }
+          }
         });
         collecting = false;
         read();
