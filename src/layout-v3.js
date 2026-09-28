@@ -744,6 +744,56 @@
     }
   }
 
+  function tableHeadingScale(root, stats) {
+    // The legacy layout shares this source but does not own managed typography.
+    if (root.getAttribute('data-mspl-article-active') !== 'true') return;
+    var win = root.ownerDocument.defaultView, queued = false;
+    var media = win.matchMedia('(min-width: 992px)');
+    function visible(h) {
+      if (!h.getClientRects().length) return false;
+      for (var n = h; n && n.nodeType === 1; n = n.parentElement) {
+        var style = win.getComputedStyle(n);
+        if (n.hidden || style.display === 'none' || style.visibility === 'hidden' ||
+            style.visibility === 'collapse' || parseFloat(style.opacity) === 0) return false;
+      }
+      return true;
+    }
+    function refresh() {
+      queued = false;
+      var sections = sectionsOf(root), base = NaN;
+      for (var i = 0; i < sections.length; i++) {
+        var sec = sections[i], h = sec.h2;
+        if (!isBodySection(sec) || h.closest('.mspl-ig, .mspl-toc, .mspl-faq, .offer-card, .mspl-next-step, .mspl-author, [data-mspl-role="offer"]') || !visible(h)) continue;
+        base = parseFloat(win.getComputedStyle(h).fontSize);
+        break;
+      }
+      var delta = media.matches ? 4 : 2, size = null;
+      if (isFinite(base) && base >= 12 && base <= 120) {
+        size = (base - delta) + 'px';
+        root.style.setProperty('--mspl-table-h3-size', size);
+        root.setAttribute('data-mspl-table-h3', delta === 4 ? 'h2-4' : 'h2-2');
+      } else {
+        root.style.removeProperty('--mspl-table-h3-size');
+        root.removeAttribute('data-mspl-table-h3');
+      }
+      stats.tableH3 = size;
+      if (root.hasAttribute('data-mspl-layout-stats')) root.setAttribute('data-mspl-layout-stats', JSON.stringify(stats));
+    }
+    function schedule() {
+      if (!queued) { queued = true; win.requestAnimationFrame(refresh); }
+    }
+    refresh();
+    win.addEventListener('resize', schedule);
+    if (media.addEventListener) media.addEventListener('change', schedule);
+    else if (media.addListener) media.addListener(schedule);
+    if (win.ResizeObserver) {
+      var observer = new win.ResizeObserver(schedule);
+      observer.observe(root);
+      Array.prototype.forEach.call(root.children, function (h) { if (h.tagName === 'H2') observer.observe(h); });
+    }
+    if (root.ownerDocument.fonts) root.ownerDocument.fonts.ready.then(schedule);
+  }
+
   // Controls are runtime UI outside the stored article. No image content is rewritten.
   var zoomDialog, zoomImage, zoomViewport, zoomOpener, oldOverflow;
   function zoomButton(label, cls, action) {
@@ -837,6 +887,7 @@
     readingTime(root);
     classifyFigures(root);
     var stats = layoutSections(root, config());
+    tableHeadingScale(root, stats);
     shortBullets(root);
     stats.toc = buildToc(root);
     stats.buttons = buttonFallback(root);
