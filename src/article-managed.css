@@ -213,3 +213,13 @@ img[data-mspl-author-portrait="true"][data-mspl-author-portrait] { display: bloc
   dialog[data-mspl-article-dialog="true"] .mspl-zoom__toolbar { gap: 4px; }
   dialog[data-mspl-article-dialog="true"] .mspl-zoom__toolbar :is(button,a) { padding: 7px; font-size: 13px; }
 }
+
+/* Token labels inherit the verified button typography without site decorations. */
+[data-mspl-article-active="true"] .offer-card[data-mspl-cta-profile] .mspl-cta-label * {
+  box-shadow:none!important;text-shadow:none!important;
+  font-weight:inherit!important;font-style:inherit!important;letter-spacing:inherit!important;
+  text-transform:inherit!important;text-decoration:inherit!important;
+  border-radius:0!important;outline:0!important;opacity:1!important;filter:none!important;clip-path:none!important;
+}
+[data-mspl-article-active="true"] .offer-card[data-mspl-cta-profile] .mspl-cta-label :is(strong,b) {font-weight:bolder!important;}
+[data-mspl-article-active="true"] .offer-card[data-mspl-cta-profile] .mspl-cta-label :is(em,i) {font-style:italic!important;}
