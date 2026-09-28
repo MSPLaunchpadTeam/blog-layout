@@ -60,9 +60,10 @@
 [data-mspl-article-active="true"] .mspl-ig--table .mspl-ig__card { display: grid; grid-template-columns: 2em minmax(0,35fr) minmax(0,65fr); gap: .7em; padding: 1em; border-bottom: 1px solid var(--mspl-rule); }
 [data-mspl-article-active="true"] .mspl-ig--table .mspl-ig__card::before { counter-increment: mspl-article-row; content: counter(mspl-article-row, decimal-leading-zero); white-space: nowrap; overflow-wrap: normal; font-variant-numeric: tabular-nums; color: var(--mspl-accent); font-weight: bold; }
 [data-mspl-article-active="true"] .mspl-ig--table .mspl-ig__card > :is(h3,.mspl-ig__label) { min-width: 0; margin: 0; }
-/* No visible body H2: retain the shared desktop size and host tablet/mobile sizing. */
+/* Pending or absent H2: large-heading fallback also outranks client 23px overrides. */
+html [data-mspl-article-active="true"]:not([data-mspl-table-h3]) .mspl-ig--table .mspl-ig__card > h3 { font-size: 22px !important; }
 @media (min-width: 992px) {
-  [data-mspl-article-active="true"] .mspl-ig--table .mspl-ig__card > h3 { font-size: 30px !important; }
+  html [data-mspl-article-active="true"]:not([data-mspl-table-h3]) .mspl-ig--table .mspl-ig__card > h3 { font-size: 24px !important; }
 }
 [data-mspl-article-active="true"][data-mspl-table-h3] .mspl-ig--table .mspl-ig__card > h3 { font-size: var(--mspl-table-h3-size) !important; }
 [data-mspl-article-active="true"] .mspl-ig--table .mspl-ig__card > :is(p,.mspl-ig__body,.mspl-ig__detail) { min-width: 0; margin: 0; }
