@@ -649,7 +649,7 @@
     if (mx - mn < 40) return false;    // grey
     return true;
   }
-  function applyAccent(root) {
+  function legacyAccent(root) {
     var v = '';
     try { v = String(window.getComputedStyle(document.documentElement).getPropertyValue('--primary-1') || '').trim(); } catch (e) { v = ''; }
     if (v) { root.setAttribute('data-mspl-accent', '--primary-1'); return '--primary-1'; }
@@ -665,6 +665,41 @@
     }
     root.setAttribute('data-mspl-accent', 'css-default');
     return 'css-default';
+  }
+
+  function applyAccent(root) {
+    var A = typeof MSPL_ACCENT !== 'undefined' ? MSPL_ACCENT : window.MSPL_ACCENT;
+    var source = legacyAccent(root);
+    if (!A) return source;
+    var candidate = null, surface = '#fff', heading = null;
+    if (source === '--primary-1') {
+      var probe = document.createElement('span');
+      probe.style.color = 'var(--primary-1)'; root.appendChild(probe);
+      candidate = window.getComputedStyle(probe).color; probe.remove();
+    } else if (source === 'button') candidate = root.style.getPropertyValue('--mspl-accent');
+    for (var n = root; n; n = n.parentElement) {
+      var cs = window.getComputedStyle(n);
+      if (cs.backgroundImage && cs.backgroundImage !== 'none') { surface = 'unknown'; break; }
+      var bg = A.parseColour(cs.backgroundColor);
+      if (bg && bg.a >= 0.99) { surface = cs.backgroundColor; break; }
+    }
+    var secs = sectionsOf(root);
+    for (var i = 0; i < secs.length; i++) if (isBodySection(secs[i])) { heading = window.getComputedStyle(secs[i].h2).color; break; }
+    var text = window.getComputedStyle(root).color;
+    var resolved = A.resolveAccent({candidate:candidate,heading:heading || text,text:text,surface:surface});
+    root.__msplAccentStats = {accentRatio:resolved.ratio,accentMode:resolved.source === 'ink-unresolved' || resolved.source === 'surface-unknown' ? resolved.source : resolved.mode,surface:surface};
+    // Rail numerals paint var(--mspl-surface, Canvas) under the ink. Canvas is white, which is wrong under an
+    // adjusted ink and on any dark article surface (L < 0.179, where white text out-contrasts black), so the real
+    // surface is named there only. Light as-is pages keep Canvas byte-identically.
+    var surfaceColour = A.parseColour(surface);
+    if (surfaceColour && (resolved.mode === 'fill' || A.luminance(surfaceColour) < 0.179)) root.style.setProperty('--mspl-surface', surface);
+    if (resolved.mode === 'fill') {
+      root.style.setProperty('--mspl-accent', resolved.ink);
+      root.style.setProperty('--mspl-accent-fill', resolved.fill);
+      root.setAttribute('data-mspl-accent-mode', 'fill');
+      source += ':' + resolved.source; root.setAttribute('data-mspl-accent', source);
+    }
+    return source;
   }
 
   // Match the host site's actual button surface. Exclude article styles so the enhancer cannot sample itself.
@@ -755,7 +790,7 @@
     // The legacy layout shares this source but does not own managed typography.
     if (root.getAttribute('data-mspl-article-active') !== 'true') return;
     var doc = root.ownerDocument, win = doc.defaultView, queued = false;
-    var media = win.matchMedia('(min-width: 992px)');
+    var media = win.matchMedia ? win.matchMedia('(min-width: 992px)') : { matches: false };
     var desktopBase = NaN, measured = false, pending = false, retriesStarted = false;
     function sane(size) { return isFinite(size) && size >= 12 && size <= 120; }
     function desktopH2Px(h2) {
@@ -1026,6 +1061,7 @@
     stats.tldr = rebuilt.tldr;
     stats.offer = rebuilt.offer;
     stats.accent = accent;
+    if (root.__msplAccentStats) Object.keys(root.__msplAccentStats).forEach(function(key){stats[key]=root.__msplAccentStats[key];});
     stats.corners = corners;
     root.setAttribute('data-mspl-layout-stats', JSON.stringify(stats));
   }

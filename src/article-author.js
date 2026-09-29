@@ -122,8 +122,9 @@ var articleAuthor = (function () {
     });
     var sample = window.getComputedStyle(root), targets = [saved.card];
     targets.forEach(function (target) {
+      if (root.hasAttribute('data-mspl-accent-mode')) target.setAttribute('data-mspl-accent-mode', root.getAttribute('data-mspl-accent-mode'));
       target.style.fontFamily = sample.fontFamily; target.style.color = sample.color;
-      ['--mspl-accent', '--mspl-rule', '--mspl-radius', '--mspl-button-radius'].forEach(function (key) { var value = sample.getPropertyValue(key); if (value) target.style.setProperty(key, value); });
+      ['--mspl-accent', '--mspl-accent-fill', '--mspl-rule', '--mspl-radius', '--mspl-button-radius'].forEach(function (key) { var value = sample.getPropertyValue(key); if (value) target.style.setProperty(key, value); });
     });
     var anchors = document.querySelectorAll('a[href]');
     for (var i = 0; i < anchors.length; i++) {
@@ -132,7 +133,8 @@ var articleAuthor = (function () {
       var portraits = anchor.querySelectorAll('img');
       for (var j = 0; j < portraits.length; j++) {
         portraits[j].setAttribute('data-mspl-author-portrait', 'true');
-        ['--mspl-accent','--mspl-radius'].forEach(function(key){portraits[j].style.setProperty(key,sample.getPropertyValue(key));});
+        if (root.hasAttribute('data-mspl-accent-mode')) portraits[j].setAttribute('data-mspl-accent-mode', root.getAttribute('data-mspl-accent-mode'));
+        ['--mspl-accent','--mspl-accent-fill','--mspl-radius'].forEach(function(key){portraits[j].style.setProperty(key,sample.getPropertyValue(key));});
       }
     }
     sources(root, saved.stash);

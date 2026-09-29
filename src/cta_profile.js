@@ -2,7 +2,7 @@
 var CP=(function(){
  'use strict';
  const VERSION=1,PARTS=['card','heading','body','button','arrow'],SIZES=['desktop','tablet','mobile'];
- const PROPERTIES=new Set(('background-color color font-family font-size font-weight font-style line-height letter-spacing text-transform text-align text-decoration border border-top border-right border-bottom border-left border-color border-width border-style border-radius border-top-left-radius border-top-right-radius border-bottom-left-radius border-bottom-right-radius padding padding-top padding-right padding-bottom padding-left margin-top margin-bottom margin-left margin-right gap row-gap column-gap width min-width max-width height min-height max-height box-shadow align-items justify-content flex-direction').split(' '));
+ const PROPERTIES=new Set(('background-color background-image color font-family font-size font-weight font-style line-height letter-spacing text-transform text-align text-decoration border border-top border-right border-bottom border-left border-color border-width border-style border-radius border-top-left-radius border-top-right-radius border-bottom-left-radius border-bottom-right-radius padding padding-top padding-right padding-bottom padding-left margin-top margin-bottom margin-left margin-right gap row-gap column-gap width min-width max-width height min-height max-height box-shadow align-items justify-content flex-direction').split(' '));
  const fail=m=>{throw Error('CTA profile: '+m);};
  const sha=s=>(typeof OP!=='undefined'?OP:require('./october_preflight.js')).sha256(s);
  const canonical=x=>Array.isArray(x)?x.map(canonical):x&&typeof x==='object'?Object.fromEntries(Object.keys(x).sort().map(k=>[k,canonical(x[k])])):x;
@@ -19,9 +19,25 @@ var CP=(function(){
   else {const groups=f[2].trim().split('/');if(groups.length>2)return false;values=groups[0].trim().split(/\s+/);if(values.length!==3)return false;if(groups.length===2)values.push(groups[1].trim());}
   return [3,4].includes(values.length)&&values.every((n,i)=>/^hsl/i.test(f[1])&&i<3?(i===0?/^[+-]?(?:\d*\.)?\d+(?:deg|rad|grad|turn)?$/i.test(n):/^[+-]?(?:\d*\.)?\d+%$/.test(n)):/^[+-]?(?:\d*\.)?\d+%?$/.test(n));
  }
+ // Only one concrete gradient layer: no fetches, substitutions or executable CSS.
+ function gradientStops(value){
+  const m=/^(?:repeating-)?(linear|radial)-gradient\((.*)\)$/i.exec(String(value||'').trim());
+  if(!m||/(?:url|var|attr|expression|image-set)\s*\(/i.test(value))return null;
+  const groups=m[2].split(/,(?![^()]*\))/).map(s=>s.trim()),stops=[];
+  const angle=v=>/^[+-]?(?:\d*\.)?\d+(?:deg|rad|grad|turn)$/i.test(v);
+  for(let i=0;i<groups.length;i++){
+   const parts=words(groups[i]),c=parts[0];
+   if(c&&colour(c)&&!/^currentcolor$/i.test(c)&&parts.length<=3&&parts.slice(1).every(length)){stops.push(c);continue;}
+   if(i!==0||stops.length)return null;
+   const prelude=m[1].toLowerCase()==='linear'?(angle(groups[i])||/^to (?:left|right|top|bottom)(?: (?:left|right|top|bottom))?$/.test(groups[i])):parts.length>0&&parts.every(v=>/^(?:circle|ellipse|closest-side|closest-corner|farthest-side|farthest-corner|at|center|left|right|top|bottom)$/.test(v)||nonnegative(v));
+   if(!prelude)return null;
+  }
+  return stops.length>=2?stops:null;
+ }
  const borderStyles=new Set('none hidden dotted dashed solid double groove ridge inset outset'.split(' '));
  function valueAllowed(prop,value){
   const v=value.trim(),parts=words(v),within=(max,predicate)=>parts.length>0&&parts.length<=max&&parts.every(predicate);
+  if(prop==='background-image')return !!gradientStops(v);
   if(prop==='color'||prop==='background-color')return colour(v);
   if(prop==='font-family')return v.split(',').every(n=>/^(?:"[^"\n]+"|'[^'\n]+'|[a-zA-Z_][a-zA-Z0-9_ -]*)$/.test(n.trim()));
   if(prop==='font-size')return nonnegative(v)&&parseFloat(v)>0||/^(?:xx-small|x-small|small|medium|large|x-large|xx-large|xxx-large|smaller|larger)$/.test(v);
@@ -147,6 +163,6 @@ var CP=(function(){
   const appearances=new Set(candidates.map(p=>json({buttonKind:p.buttonKind,tokens:p.tokens})));if(appearances.size!==1)fail('conflicting '+(services.length?'service':'about')+' CTA styles require review');
   return [...candidates].sort((a,b)=>a.referenceUrl.localeCompare(b.referenceUrl))[0];
  }
- return {VERSION,create,validate,markup,verify,css,select,PROPERTIES:[...PROPERTIES]};
+ return {VERSION,create,validate,markup,verify,css,select,gradientStops,PROPERTIES:[...PROPERTIES]};
 })();
 if(typeof module!=='undefined'&&module.exports)module.exports=CP;
