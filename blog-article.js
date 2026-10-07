@@ -1698,6 +1698,16 @@ function ready() {
   if(document.documentElement.getAttribute('data-wf-site')!==state.siteId) return fail('site-changed');
   state.assets.cssLoaded=true;
   root.setAttribute('data-mspl-article-active','true');
+  // Carmichael apple-business-manager 2026-10-07: the managed CSS puts contain:inline-size on the active root so
+  // shrink-to-fit host wrappers stop sizing the column from the article's min-content (163px there, after which
+  // Chromium never repainted the card). Hosts that size the Rich Text FROM its content (auto-width flex items:
+  // Zhero, Red Team) collapse to 0 under containment, so measure once with containment active and release it
+  // inline when the root collapsed. Never force a layout before containment is active: that froze Carmichael.
+  var hostWidth=root.parentElement?root.parentElement.getBoundingClientRect().width:0;
+  var rootWidth=root.getBoundingClientRect().width;
+  var collapsed=rootWidth<200||(hostWidth>0&&rootWidth<hostWidth*0.4);
+  if(collapsed)root.style.contain='none';
+  root.setAttribute('data-mspl-contain',collapsed?'released':'inline-size');
   try {
     // Generated labels should inherit native article prose, not an unrelated
     // template wrapper font. Keep native headings and CTA profile rules intact.
