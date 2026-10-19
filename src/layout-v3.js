@@ -703,13 +703,30 @@
   }
 
   // Match the host site's actual button surface. Exclude article styles so the enhancer cannot sample itself.
+  // rc.33 (Allied IT Systems, 2026-10-19): the site's buttons are a.primary-button (no .w-button, no c-button-main*),
+  // so nothing was sampled, data-mspl-corners="fallback" left --mspl-radius unset and the managed 8px default rounded
+  // every callout on a square site. The sampler now also reads the site's own anchor/button family (never a bare
+  // [class*="button"]: decorative 0x0 "-shape" divs carry border-radius:100%), a drawn surface counts whether it is a
+  // colour, a gradient or a border (Allied's button is gradient-only, transparent to isTransparent), and the fallback
+  // is the CSS initial: square.
+  function cornersSurface(el) {
+    var cs = window.getComputedStyle(el);
+    if (!isTransparent(el)) return true;
+    if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
+    var sides = ['Top', 'Right', 'Bottom', 'Left'];
+    for (var i = 0; i < sides.length; i++) {
+      var style = cs['border' + sides[i] + 'Style'];
+      if (style && style !== 'none' && style !== 'hidden' && (parseFloat(cs['border' + sides[i] + 'Width']) || 0) > 0) return true;
+    }
+    return false;
+  }
   function applyCorners(root) {
-    var btns = document.querySelectorAll('header .w-button, nav .w-button, .w-button, [class*="c-button-main"]');
+    var btns = document.querySelectorAll('header .w-button, nav .w-button, .w-button, [class*="c-button-main"], a[class*="button"], button');
     for (var i = 0; i < btns.length; i++) {
       var el = btns[i];
       if (el.closest('.w-richtext, .mspl-author')) continue;
       var cs = window.getComputedStyle(el);
-      if (cs.display === 'none' || cs.visibility === 'hidden' || isTransparent(el)) continue;
+      if (cs.display === 'none' || cs.visibility === 'hidden' || !cornersSurface(el)) continue;
       var radius = Math.max.apply(Math, [cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomLeftRadius, cs.borderBottomRightRadius, cs.borderRadius].map(function (r) { return parseFloat(r) || 0; }));
       var style = radius > 0 ? 'rounded' : 'square';
       var targets = [root], container = root.closest('.blog-details-content');
@@ -722,6 +739,10 @@
       root.setAttribute('data-mspl-corners', style);
       return style;
     }
+    // No sampled button: square (CSS initial), not the stylesheet's 8px default (Allied 2026-10-19).
+    root.style.setProperty('--mspl-radius', '0px');
+    root.style.setProperty('--mspl-icon-radius', '0px');
+    root.style.setProperty('--mspl-button-radius', '0px');
     root.setAttribute('data-mspl-corners', 'fallback');
     return 'fallback';
   }
