@@ -9,6 +9,13 @@ if (prior) {
   return;
 }
 var cssURL, css, timer, root;
+// Alcott Enterprises 2026-11-12 (first ILM article): the course template gives the Rich Text wrapper a heading
+// size (.rich-text-style{font-size:40px}) while paragraphs set their own 18px, so every em in the managed CSS
+// resolved against 40px (40px table numerals and row padding, 56-60px block margins). Fleet read the same day,
+// 36 installed sites at 1440 and 390 wide: a healthy wrapper is at most 1.29x its paragraph (18px over 14px on
+// phones), a broken one at least 2.0x (40px over 20px). Under this ratio the wrapper is prose-sized and the
+// components keep inheriting it, so sites that were approved as they are do not move.
+var WRAPPER_NOT_PROSE_RATIO = 1.5;
 var state = {status:'loading', code:'waiting-dom', version:VERSION, siteId:'', rootSelector:'[data-mspl-article="true"]', assets:{js:scriptURL, css:'', cssLoaded:false}};
 function report(status, code) {
   var value = state || {version:VERSION, siteId:document.documentElement.getAttribute('data-wf-site') || '', assets:{js:scriptURL}};
@@ -36,6 +43,43 @@ function fail(code) {
   if(css) css.remove();
   report('error',code);
 }
+// Managed components size themselves in em. They follow the article's own paragraph, never a heading-sized wrapper,
+// and in a flex-column wrapper (where margins add up instead of collapsing) they give half their designed margin.
+// Without a usable sample paragraph nothing is written: the components keep the inheritance they had before.
+function componentBase(sample) {
+  var queued=false;
+  function clear() {
+    root.style.removeProperty('--mspl-component-size');
+    root.removeAttribute('data-mspl-base');
+    root.removeAttribute('data-mspl-flow');
+  }
+  function refresh() {
+    queued=false;
+    try {
+      var own=window.getComputedStyle(root), wrapper=parseFloat(own.fontSize);
+      var size=sample&&sample.isConnected?window.getComputedStyle(sample).fontSize:'', body=parseFloat(size);
+      if(!isFinite(wrapper)||!isFinite(body)||body<=0) return clear();
+      if(wrapper>=body*WRAPPER_NOT_PROSE_RATIO) {
+        root.style.setProperty('--mspl-component-size',size);
+        root.setAttribute('data-mspl-base','paragraph');
+      } else {
+        root.style.removeProperty('--mspl-component-size');
+        root.removeAttribute('data-mspl-base');
+      }
+      if(/^(inline-)?flex$/.test(own.display)&&/^column/.test(own.flexDirection)) root.setAttribute('data-mspl-flow','stacked');
+      else root.removeAttribute('data-mspl-flow');
+    } catch(error) { clear(); }
+  }
+  function schedule() { if(!queued) { queued=true; window.requestAnimationFrame(refresh); } }
+  try {
+    refresh();
+    // The paragraph size is breakpoint-dependent (18px, 16px at 767px and below on the course template).
+    window.addEventListener('resize',schedule);
+    window.addEventListener('load',schedule);
+    if(window.ResizeObserver) new window.ResizeObserver(schedule).observe(root);
+    if(document.fonts&&document.fonts.ready) document.fonts.ready.then(schedule);
+  } catch(error) { clear(); }
+}
 function ready() {
   if(state.status!=='loading') return;
   if(window.MSPL_BLOG_ARTICLE!==state) return fail('release-conflict');
@@ -47,6 +91,16 @@ function ready() {
   if(document.documentElement.getAttribute('data-wf-site')!==state.siteId) return fail('site-changed');
   state.assets.cssLoaded=true;
   root.setAttribute('data-mspl-article-active','true');
+  // Carmichael apple-business-manager 2026-10-07: the managed CSS puts contain:inline-size on the active root so
+  // shrink-to-fit host wrappers stop sizing the column from the article's min-content (163px there, after which
+  // Chromium never repainted the card). Hosts that size the Rich Text FROM its content (auto-width flex items:
+  // Zhero, Red Team) collapse to 0 under containment, so measure once with containment active and release it
+  // inline when the root collapsed. Never force a layout before containment is active: that froze Carmichael.
+  var hostWidth=root.parentElement?root.parentElement.getBoundingClientRect().width:0;
+  var rootWidth=root.getBoundingClientRect().width;
+  var collapsed=rootWidth<200||(hostWidth>0&&rootWidth<hostWidth*0.4);
+  if(collapsed)root.style.contain='none';
+  root.setAttribute('data-mspl-contain',collapsed?'released':'inline-size');
   try {
     // Generated labels should inherit native article prose, not an unrelated
     // template wrapper font. Keep native headings and CTA profile rules intact.
@@ -58,6 +112,7 @@ function ready() {
       var bodyFont=window.getComputedStyle(bodySample).fontFamily;
       if(bodyFont)root.style.setProperty('--mspl-body-font',bodyFont);
     }
+    componentBase(bodySample);
     articleCta.prepare(root);
     articleAuthor.prepare(root);
     modules.tokens(root);
